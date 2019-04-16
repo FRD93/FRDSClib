@@ -9,7 +9,7 @@ Copyright ©2018, Francesco Roberto Dani
 FRDMixerMatrixPlugIn {
 
 	// System variables
-	var routes, records, presetPath;
+	var routes, records, presetPath_r;
 	// GUI variables
 	var width, height, spacing, buttonsWidth, mainWindow;
 	var inlets, outlets;
@@ -23,7 +23,7 @@ FRDMixerMatrixPlugIn {
 		records = Dictionary.new;
 		inlets = Array.newClear();
 		outlets =Array.newClear();
-		presetPath = "".resolveRelative ++ "Preset/";
+		presetPath_r = "".resolveRelative ++ "Preset/";
 		this.showGUI();
 	}
 
@@ -76,7 +76,7 @@ FRDMixerMatrixPlugIn {
 		]));
 
 		if(mainWindow.class == Window, {mainWindow.refresh});
-		( "Added: " ++ ( fromProcess++toProcess ) ).postln;
+		("Added" + ( fromProcess++toProcess ) ++ ", fade in in" + fadeTime + "seconds.").postln;
 	}
 
 	unroute { | fromProcess, toProcess, fadeTime=1 |
@@ -84,7 +84,7 @@ FRDMixerMatrixPlugIn {
 		routes.at(fromProcess++toProcess).release( fadeTime );
 		routes.removeAt(fromProcess++toProcess);
 		if(mainWindow.class == Window, {mainWindow.refresh});
-		( "Removed: " ++ ( fromProcess++toProcess ) ).postln;
+		("Removed" + ( fromProcess++toProcess ) ++ ", fade out in" + fadeTime + "seconds.").postln;
 	}
 
 	isRouted { | fromProcess, toProcess |
@@ -184,9 +184,11 @@ FRDMixerMatrixPlugIn {
 	writeDefFile {
 		8.do( { | nIn |
 			8.do( { | nOut |
-				SynthDef( \Route++(nIn+1)++(nOut+1), { | inCh=0, outCh=0, fadeTime=1, gate=1 |
+				SynthDef( \Route++(nIn+1)++(nOut+1), { | inCh=0, outCh=0, fadeTime=1, amp=1, gate=1 |
 					var in, out, env;
-					env = EnvGen.ar( Env.adsr( fadeTime, 0, 1, fadeTime ), gate, doneAction: 2 );
+					//env = EnvGen.ar( Env.adsr( fadeTime, 0, 1, fadeTime ), gate, doneAction: 2 );
+					//env = EnvGen.ar(Env.new([0, 1, 1, 0], [fadeTime, 1, fadeTime], [-1, 0, 1], 2), gate, doneAction: 2);
+					env = EnvGen.ar(Env.asr(fadeTime, amp, fadeTime, [-1, 1]), gate, doneAction: 2);
 					in = InFeedback.ar( inCh, (nIn+1) ) * env;
 					if( nIn > nOut, {
 						in = in[0..nOut];
@@ -200,9 +202,23 @@ FRDMixerMatrixPlugIn {
 		} );
 	}
 
-	writePresetFile { | name="tmp" |
+
+
+
+		presetPath {
+		^presetPath_r
+	}
+	presetPath_ { | presetPath |
+		presetPath_r = presetPath;
+		^presetPath_r
+	}
+
+
+
+
+	writePreset { | name="tmp" |
 		var tmp;
-		tmp = File.open( presetPath ++ name ++ "_records.scd", "w" );
+		tmp = File.open( presetPath_r ++ name ++ "_records.scd", "w" );
 		tmp.write( "Dictionary.new" );
 		records.keysValuesDo( { | recordName, recordValue |
 			tmp.write( ".put( \\" ++ recordName ++ ", Dictionary.new" );
@@ -213,7 +229,7 @@ FRDMixerMatrixPlugIn {
 		});
 		tmp.close();
 
-		tmp = File.open( presetPath ++ name ++ "_routes.scd", "w" );
+		tmp = File.open( presetPath_r ++ name ++ "_routes.scd", "w" );
 		tmp.write( "[ " );
 		routes.keysDo( { | route |
 			tmp.write( "\"" ++ route ++ "\", " );
@@ -222,17 +238,21 @@ FRDMixerMatrixPlugIn {
 		tmp.close();
 	}
 
-	readPresetFile { | name |
-		records = File.open( presetPath ++ name ++ "_records.scd", "r" ).readAllString.interpret;
-		routes.keysValuesDo( { | key, val |
-			val.free;
+
+
+
+	readPreset { | name, fadeIn=1, fadeOut=1 |
+		// Open new records file
+		records = File.open( presetPath_r ++ name ++ "_records.scd", "r" ).readAllString.interpret;
+		// Remove all existing routes
+		routes.keysValuesDo( { | name, synth |
+			synth.release(fadeOut);
+			("Removed" + name ++ ", fade out in" + fadeOut + "seconds.").postln;
 		} );
-		File.open( presetPath ++ name ++ "_routes.scd", "r" ).readAllString.interpret.do( { | route |
+		File.open( presetPath_r ++ name ++ "_routes.scd", "r" ).readAllString.interpret.do( { | route |
 			var from, to;
-			route.postln;
 			records.keysDo( { | name |
 				name = name.asString;
-				name.postln;
 				if( route.find( name.asString ) != nil, {
 					if( route.find( name ) == 0, {
 						from = name;
@@ -241,9 +261,8 @@ FRDMixerMatrixPlugIn {
 					} );
 				} );
 			} );
-			this.route( from, to, 1 );
+			this.route( from, to, fadeIn );
 		} );
-		routes.postln;
 	}
 
 }

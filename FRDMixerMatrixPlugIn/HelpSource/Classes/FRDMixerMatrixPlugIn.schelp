@@ -90,8 +90,10 @@ Name of process to remove.
 
 METHOD:: isRouted
 Check if two processes are connected.
-ARGUMENT:: name
-Name of the process.
+ARGUMENT:: fromProcess
+Name of the process that is sending signals.
+ARGUMENT:: toProcess
+Name of the process that is receiving signals.
 
 
 
@@ -104,6 +106,31 @@ Show graphical user interface.
 
 METHOD:: writeDefFile
 Write the SynthDefs to file. It should be run once when you first run this plugin.
+
+
+
+
+METHOD:: presetPath
+Get/set the path where the plugin is looking for presets.
+returns:: Path
+
+
+
+
+METHOD:: readPreset
+Read and load a preset from file.
+ARGUMENT:: name
+The name of the preset.
+
+
+
+METHOD:: writePreset
+ARGUMENT:: name
+The name of the preset.
+WARNING::
+If a preset with the same name already exists in the current presetPath, it will be silently overwritten!
+::
+
 
 
 
@@ -130,6 +157,15 @@ SynthDef(\TestSignal, { | outCh=20 |
 }).add;
 )
 
+(
+// White noise might be better for testing
+SynthDef(\TestSignal, { | outCh=20 |
+	var sig, env, trig, freq;
+	sig = WhiteNoise.ar(0.01) ! 2;
+	Out.ar(outCh, sig);
+}).add;
+)
+
 
 (
 // Run source
@@ -147,7 +183,11 @@ m.addProcess(name: "TestSignal", inChannels: 0, outChannels: 2, inCh: nil, outCh
 m.addFRDProcess("FRDReverb", r);
 )
 
+// Try writing this scene to preset
+m.writePreset("tmp");
 
+// Try reloading preset after changing something
+m.readPreset("tmp", 1, 1);
 
 ::
 

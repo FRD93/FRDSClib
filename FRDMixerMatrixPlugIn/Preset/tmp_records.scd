@@ -1,1 +1,1 @@
-Dictionary.new.put( \Out, Dictionary.new.put( \inChannels, 2 ) .put( \chOUT, 0 ) .put( \chIN, 0 ) .put( \outChannels, 2 ) ) .put( \Synth, Dictionary.new.put( \inChannels, 0 ) .put( \chOUT, 20 ) .put( \chIN, 0 ) .put( \outChannels, 2 ) ) 
+Dictionary.new.put( \TestSignal, Dictionary.new.put( \inChannels, 0 ) .put( \outChannels, 2 ) .put( \outCh, 80 ) ) .put( \FRDReverb, Dictionary.new.put( \inChannels, 2 ) .put( \inCh, 20 ) .put( \outChannels, 2 ) .put( \outCh, 0 ) ) 
