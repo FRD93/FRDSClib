@@ -1,0 +1,164 @@
+TITLE:: FRDMixerMatrixPlugIn
+summary:: A matrix-like mixer with GUI. Thought to be used for live electronics.
+categories:: FRD-PlugIns
+related:: none
+
+DESCRIPTION::
+FRDMixerMatrixPlugIn is a language-side class that allows the musician to connect synths with a matrix-like GUI and to store and recall connections from preset files. It should be useful in live electronics scenarios.
+
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Create a new FRDMixerMatrixPlugIn instance.
+returns:: A FRDMixerMatrixPlugIn instance.
+
+
+
+INSTANCEMETHODS::
+
+METHOD:: addProcess
+Add a process to the mixer from scratch.
+ARGUMENT:: name
+Process name (symbol or string).
+ARGUMENT:: inChannels
+Number of input channels.
+ARGUMENT:: outChannels
+Number of output channels.
+ARGUMENT:: inCh
+Input channel index. If inChannels == 0, set this to nil.
+ARGUMENT:: outCh
+Output channel index.
+WARNING::
+porco dio
+::
+
+
+METHOD:: addFRDProcess
+Add a FRD-PlugIn instance as process to the mixer.
+ARGUMENT:: name
+Process name (symbol or string).
+ARGUMENT:: frdPlugIn
+A FRD-PlugIn instance.
+
+
+
+
+METHOD:: route
+Connect two processes.
+ARGUMENT:: fromProcess
+Process name whose output has to be connected to.
+ARGUMENT:: toProcess
+Process name whose input has to be connected to.
+ARGUMENT:: fadeTime
+Fade time in seconds.
+
+
+
+
+METHOD:: unroute
+Disconnect two processes.
+ARGUMENT:: fromProcess
+Process name whose output has to be disconnected to.
+ARGUMENT:: toProcess
+Process name whose input has to be disconnected to.
+ARGUMENT:: fadeTime
+Fade time in seconds.
+
+
+
+
+METHOD:: getProcess
+Get process information
+ARGUMENT:: name
+Process name.
+returns:: Dictionary containing process information.
+
+
+
+
+METHOD:: removeProcess
+Disconnect two processes.
+ARGUMENT:: name
+Name of process to remove.
+
+
+
+
+METHOD:: isRouted
+Check if two processes are connected.
+ARGUMENT:: name
+Name of the process.
+
+
+
+
+METHOD:: showGUI
+Show graphical user interface.
+
+
+
+
+METHOD:: writeDefFile
+Write the SynthDefs to file. It should be run once when you first run this plugin.
+
+
+
+
+
+
+EXAMPLES::
+
+Basic usage:
+
+code::
+
+
+(
+// A source for test
+SynthDef(\TestSignal, { | outCh=20 |
+	var sig, env, trig, freq;
+	trig = Impulse.kr(TRand.kr(0.5, 8, Impulse.kr(0.5)).round(0.25));
+	freq = TExpRand.kr(38, 99, trig).round(6).midicps;
+	env = EnvGen.ar(Env.perc(0.01, 0.21), trig, 1, 0.0, TExpRand.kr(0.75, 1.25, Impulse.kr(0.25)), doneAction: 0);
+	sig = SinOsc.ar(freq + SinOsc.ar(freq*env, 0, 0.5*freq*env*SinOsc.ar(0.1).abs.pow(4)), 0, env * 0.1 * AmpCompA.kr(freq));
+	sig = Pan2.ar(sig, Lag2.ar(TRand.ar(-0.63, 0.63, trig), 0.5));
+	Out.ar(outCh, sig);
+}).add;
+)
+
+
+(
+// Run source
+x = Synth.head(s, \TestSignal, [\outCh, 80]);
+// Run reverb plug in
+r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addToTail', actionNode: 1);
+)
+
+(
+// Create Mixer instance
+m = FRDMixerMatrixPlugIn.new();
+// Add a process from scratch
+m.addProcess(name: "TestSignal", inChannels: 0, outChannels: 2, inCh: nil, outCh: 80);
+// A FRD-PlugIn can be connected directly with .addFRDProcess
+m.addFRDProcess("FRDReverb", r);
+)
+
+
+
+::
+
+
+
+
+
+
+
+
+
+
+
+
