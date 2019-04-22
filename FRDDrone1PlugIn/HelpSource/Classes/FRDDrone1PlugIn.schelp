@@ -143,11 +143,93 @@ Basic usage:
 
 code::
 
-// Try
-d = FRDDrone1PlugIn(amp: 0.5);
+(
+d = FRDDrone1PlugIn(amp: 0.5, outCh: 30);
+d.showGUI;
+p =FRDSpatPlugIn(32, 34, 2);
+r = FRDReverbPlugIn(36, 0, 0.7, -0.25, 0.19);
+m = FRDMixerMatrixPlugIn();
+m.addFRDProcess("Drone", d);
+m.addFRDProcess("Reverb", r);
+m.addProcess("Spat", 1, 2, 32, 34);
+)
 
-// Make explosion
-d.explode()
+r.clearness_(0.125)
+
+
+
+(
+d.lagTime_(0.02);
+d.freq_(65);
+d.rmA_(0.8);
+d.lowpass_(90);
+d.flangerA_(0.9);
+d.vel_(0.2);
+d.max_(0.02);
+d.oct_(0.3);
+d.octA_(0.6);
+d.amp_(0.07);
+)
+
+(
+d.lagTime_(9.8);
+d.freq_(9900);
+d.rmA_(0.99);
+d.lowpass_(1000);
+d.oct_(1);
+d.octA_(0.9);
+d.flangerA_(0.19);
+d.vel_(0.05);
+d.max_(0.06);
+d.amp_(0.5);
+)
+
+(
+d.lagTime_(1.8);
+d.freq_(12000);
+d.rmA_(0.99);
+d.lowpass_(600);
+d.oct_(0.77);
+d.octA_(0.9);
+d.flangerA_(0.8);
+d.vel_(0.09);
+d.max_(0.6);
+d.amp_(0.6);
+)
+
+
+
+(
+d.lagTime_(1.8);
+d.freq_(11050);
+d.rmA_(1);
+d.lowpass_(720);
+d.oct_(0.77);
+d.octA_(1);
+d.flangerA_(0.9);
+d.vel_(0.1);
+d.max_(0.9);
+d.amp_(0.5);
+)
+
+
+
+(
+d.lagTime_(1.8);
+d.freq_(8.79);
+d.rmA_(1);
+d.lowpass_(133);
+d.oct_(0.77);
+d.octA_(1);
+d.flangerA_(0.9);
+d.vel_(0.1);
+d.max_(0.9);
+d.amp_(0.1);
+)
+
+d.explode;
+
+s.freqscope
 
 ::
 
