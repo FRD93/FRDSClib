@@ -1,0 +1,1 @@
+[ "SaxophonePitchRM", "PitchRMRing", "RingMono2Stereo", "Mono2StereoReverb", "RingConv", "LoopReverb", "RingLoop", "ConvReverb",  ]

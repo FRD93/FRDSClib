@@ -1,0 +1,246 @@
+TITLE:: FRDDrone1PlugIn
+summary:: A drone-like synthesizer with GUI. Thought to be used for live electronics.
+categories:: FRD-PlugIns
+related:: FRDDrone1
+
+DESCRIPTION::
+FRDMixerMatrixPlugIn is a language-side class that allows the musician to connect synths with a matrix-like GUI and to store and recall connections from preset files. It should be useful in live electronics scenarios.
+
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Create a new FRDDrone1PlugIn instance.
+returns:: A FRDDrone1PlugIn instance.
+
+
+
+INSTANCEMETHODS::
+
+METHOD:: addProcess
+Add a process to the mixer from scratch.
+ARGUMENT:: name
+Process name (symbol or string).
+ARGUMENT:: inChannels
+Number of input channels.
+ARGUMENT:: outChannels
+Number of output channels.
+ARGUMENT:: inCh
+Input channel index. If inChannels == 0, set this to nil.
+ARGUMENT:: outCh
+Output channel index.
+
+
+
+
+
+METHOD:: addFRDProcess
+Add a FRD-PlugIn instance as process to the mixer.
+ARGUMENT:: name
+Process name (symbol or string).
+ARGUMENT:: frdPlugIn
+A FRD-PlugIn instance.
+
+
+
+
+METHOD:: route
+Connect two processes.
+ARGUMENT:: fromProcess
+Process name whose output has to be connected to.
+ARGUMENT:: toProcess
+Process name whose input has to be connected to.
+ARGUMENT:: fadeTime
+Fade time in seconds.
+
+
+
+
+METHOD:: unroute
+Disconnect two processes.
+ARGUMENT:: fromProcess
+Process name whose output has to be disconnected to.
+ARGUMENT:: toProcess
+Process name whose input has to be disconnected to.
+ARGUMENT:: fadeTime
+Fade time in seconds.
+
+
+
+
+METHOD:: getProcess
+Get process information
+ARGUMENT:: name
+Process name.
+returns:: Dictionary containing process information.
+
+
+
+
+METHOD:: removeProcess
+Disconnect two processes.
+ARGUMENT:: name
+Name of process to remove.
+
+
+
+
+METHOD:: isRouted
+Check if two processes are connected.
+ARGUMENT:: fromProcess
+Name of the process that is sending signals.
+ARGUMENT:: toProcess
+Name of the process that is receiving signals.
+
+
+
+
+METHOD:: showGUI
+Show graphical user interface.
+
+
+
+
+METHOD:: writeDefFile
+Write the SynthDefs to file. It should be run once when you first run this plugin.
+
+
+
+
+METHOD:: presetPath
+Get/set the path where the plugin is looking for presets.
+returns:: Path
+
+
+
+
+METHOD:: readPreset
+Read and load a preset from file.
+ARGUMENT:: name
+The name of the preset.
+
+
+
+METHOD:: writePreset
+ARGUMENT:: name
+The name of the preset.
+WARNING::
+If a preset with the same name already exists in the current presetPath, it will be silently overwritten!
+::
+
+
+
+
+
+
+
+EXAMPLES::
+
+Basic usage:
+
+code::
+
+(
+d = FRDDrone1PlugIn(amp: 0.5, outCh: 30);
+d.showGUI;
+p =FRDSpatPlugIn(32, 34, 2);
+r = FRDReverbPlugIn(36, 0, 0.7, -0.25, 0.19);
+m = FRDMixerMatrixPlugIn();
+m.addFRDProcess("Drone", d);
+m.addFRDProcess("Reverb", r);
+m.addProcess("Spat", 1, 2, 32, 34);
+)
+
+r.clearness_(0.125)
+
+
+
+(
+d.lagTime_(0.02);
+d.freq_(65);
+d.rmA_(0.8);
+d.lowpass_(90);
+d.flangerA_(0.9);
+d.vel_(0.2);
+d.max_(0.02);
+d.oct_(0.3);
+d.octA_(0.6);
+d.amp_(0.07);
+)
+
+(
+d.lagTime_(9.8);
+d.freq_(9900);
+d.rmA_(0.99);
+d.lowpass_(1000);
+d.oct_(1);
+d.octA_(0.9);
+d.flangerA_(0.19);
+d.vel_(0.05);
+d.max_(0.06);
+d.amp_(0.5);
+)
+
+(
+d.lagTime_(1.8);
+d.freq_(12000);
+d.rmA_(0.99);
+d.lowpass_(600);
+d.oct_(0.77);
+d.octA_(0.9);
+d.flangerA_(0.8);
+d.vel_(0.09);
+d.max_(0.6);
+d.amp_(0.6);
+)
+
+
+
+(
+d.lagTime_(1.8);
+d.freq_(11050);
+d.rmA_(1);
+d.lowpass_(720);
+d.oct_(0.77);
+d.octA_(1);
+d.flangerA_(0.9);
+d.vel_(0.1);
+d.max_(0.9);
+d.amp_(0.5);
+)
+
+
+
+(
+d.lagTime_(1.8);
+d.freq_(8.79);
+d.rmA_(1);
+d.lowpass_(133);
+d.oct_(0.77);
+d.octA_(1);
+d.flangerA_(0.9);
+d.vel_(0.1);
+d.max_(0.9);
+d.amp_(0.1);
+)
+
+d.explode;
+
+s.freqscope
+
+::
+
+
+
+
+
+
+
+
+
+
+
+
