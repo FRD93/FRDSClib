@@ -28,6 +28,75 @@ FRDDX7PlugIn {
 
 
 
+	// Create random module patch in relative mode
+	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0 |
+		Routine{
+			var modules, carriers, modulators, params, indexes, freqs, imods;
+			var patch, lastModulators;
+			var busses = 6.collect({ Bus.audio(Server.local, 1) });
+			numCarriers = numCarriers.clip(1, 6) - 1;
+			Server.local.sync();
+			if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+			imods = 6.collect({rrand(imod[0], imod[1])});
+			//modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.0, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
+			modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
+			indexes = (0..5).scramble;
+			carriers = indexes[0..numCarriers];
+			modulators = indexes[numCarriers+1..];
+			patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+			lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
+			patch.do({ | pa |
+				modules[pa[0]].set(\extCh, busses[pa[1]]);
+			});/*
+			if(lastModulators.size == carriers.size, {
+				"==".postln;
+				lastModulators.do({|modID, id|
+					[modules[carriers[id]], busses[modID]].postln;
+					//modules[carriers[id]].set(\extCh, busses[modID]);
+					//modules[carriers[id]].set(\extCh, busses[modID]);
+				});
+			});
+			if(lastModulators.size > carriers.size, {
+				">".postln;
+				lastModulators.do({|modID, id|
+					/*
+					carriers.postln;
+					modulators.postln;
+					[carriers[id % carriers.size], "<-", modID].postln;
+					*/
+					[modules[carriers[id % carriers.size]], busses[modID]].postln;
+					modules[carriers[id % carriers.size]].set(\extCh, busses[modID]);
+				});
+			});
+			if(lastModulators.size < carriers.size, {
+				"<".postln;
+				carriers.do({|carID, id|
+					[modules[carID], busses[lastModulators[id % lastModulators.size]]].postln;
+					modules[carID].set(\extCh, busses[lastModulators[id % lastModulators.size]]);
+				});
+			});*/
+			carriers.do({ | cID, id |
+				modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
+				lastModulators.do({|iModID, id2|
+					if(0.5.coin, {
+						modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
+					});
+				});
+				modules[cID].set(\isCarrier, 1);
+				modules[cID].set(\l4, 0);
+				modules[cID].set(\fmod, freq);
+				modules[cID].set(\outCh, outCh);
+				modules[cID].set(\feedback, 0);
+				modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
+			});
+			// Must free buffers when done!
+			(dur+0.2).wait;
+			busses.do({|bus| bus.free(clear: true)});
+		}.play(AppClock);
+	}
+
+
+
 	// Create default module patch in relative mode
 	createDefaultRelativePatch { | kind=1, outCh=0, amp=0.5, dur=8, param1, param2, param3, param4, param5, param6 |
 		Routine{
@@ -48,12 +117,15 @@ FRDDX7PlugIn {
 					// row [6]->5->4->3
 					modules[4].set(\extCh, busses[5]);
 					modules[3].set(\extCh, busses[4]);
+					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 3
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
 				/* PATCH 2 */
@@ -65,11 +137,14 @@ FRDDX7PlugIn {
 					// row 6->5->4->3
 					modules[4].set(\extCh, busses[5]);
 					modules[3].set(\extCh, busses[4]);
+					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 3
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -85,9 +160,11 @@ FRDDX7PlugIn {
 					modules[3].set(\extCh, busses[4]);
 					// outputs: 1 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\outCh, outCh);
+					modules[3].set(\l4, 0);
 					modules[3].set(\isCarrier, 1);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -104,9 +181,11 @@ FRDDX7PlugIn {
 					modules[3].set(\extCh, busses[4]);
 					// outputs: 1 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -122,12 +201,15 @@ FRDDX7PlugIn {
 					modules[4].set(\extCh, busses[5]);
 					// outputs: 1 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -144,12 +226,15 @@ FRDDX7PlugIn {
 					modules[5].set(\extCh, busses[4]);
 					// outputs: 1 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -166,12 +251,15 @@ FRDDX7PlugIn {
 					modules[4].set(\outCh, busses[2]);
 					// outputs: 1 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -188,12 +276,15 @@ FRDDX7PlugIn {
 					modules[4].set(\outCh, busses[2]);
 					// outputs: 1 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -210,12 +301,15 @@ FRDDX7PlugIn {
 					modules[4].set(\outCh, busses[2]);
 					// outputs: 1 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -232,9 +326,11 @@ FRDDX7PlugIn {
 					modules[3].set(\extCh, busses[4]);
 					// outputs: 1 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -251,9 +347,11 @@ FRDDX7PlugIn {
 					modules[3].set(\extCh, busses[4]);
 					// outputs: 1 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -271,9 +369,11 @@ FRDDX7PlugIn {
 					modules[4].set(\extCh, busses[5]);
 					// outputs: 1 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -291,9 +391,11 @@ FRDDX7PlugIn {
 					modules[4].set(\extCh, busses[5]);
 					// outputs: 1 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -311,9 +413,11 @@ FRDDX7PlugIn {
 					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 3
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -331,9 +435,11 @@ FRDDX7PlugIn {
 					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 3
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -351,6 +457,7 @@ FRDDX7PlugIn {
 					modules[2].set(\outCh, busses[1]);
 					// outputs: 1
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -368,6 +475,7 @@ FRDDX7PlugIn {
 					modules[2].set(\outCh, busses[1]);
 					// outputs: 1
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -385,6 +493,7 @@ FRDDX7PlugIn {
 					modules[3].set(\outCh, busses[1]);
 					// outputs: 1
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -401,12 +510,15 @@ FRDDX7PlugIn {
 					modules[0].set(\extCh, busses[1]);
 					// outputs: 1 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 2)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -424,12 +536,15 @@ FRDDX7PlugIn {
 					modules[5].set(\outCh, busses[3]);
 					// outputs: 1 & 3 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -447,15 +562,19 @@ FRDDX7PlugIn {
 					modules[4].set(\outCh, busses[5]);
 					// outputs: 1 & 3 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -473,15 +592,19 @@ FRDDX7PlugIn {
 					modules[5].set(\extCh, busses[4]);
 					// outputs: 1 & 3 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -497,15 +620,19 @@ FRDDX7PlugIn {
 					modules[5].set(\extCh, busses[4]);
 					// outputs: 1 & 2 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -521,18 +648,23 @@ FRDDX7PlugIn {
 					modules[5].set(\extCh, busses[4]);
 					// outputs: 1 & 2 & 3 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -546,18 +678,23 @@ FRDDX7PlugIn {
 					modules[5].set(\extCh, busses[4]);
 					// outputs: 1 & 2 & 3 & 4 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -573,12 +710,15 @@ FRDDX7PlugIn {
 					modules[5].set(\outCh, busses[4]);
 					// outputs: 1 & 2 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -594,12 +734,15 @@ FRDDX7PlugIn {
 					modules[5].set(\outCh, busses[4]);
 					// outputs: 1 & 2 & 4
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -614,12 +757,15 @@ FRDDX7PlugIn {
 					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 3 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 3)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -633,15 +779,19 @@ FRDDX7PlugIn {
 					modules[4].set(\extCh, busses[5]);
 					// outputs: 1 & 2 & 3 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -654,15 +804,19 @@ FRDDX7PlugIn {
 					modules[2].set(\extCh, busses[3]);
 					// outputs: 1 & 2 & 3 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 4)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -674,18 +828,23 @@ FRDDX7PlugIn {
 					modules[4].set(\extCh, busses[5]);
 					// outputs: 1 & 2 & 3 & 4 & 5
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 5)); // Psychoacoustic amplitude compensation for carriers
 				},
@@ -695,21 +854,27 @@ FRDDX7PlugIn {
 					[0, 1, 2, 3, 4].do({|id| modules[id].set(\feedback, 0)});
 					// outputs: 1 & 2 & 3 & 4 & 5 & 6
 					modules[0].set(\isCarrier, 1);
+					modules[0].set(\l4, 0);
 					modules[0].set(\outCh, outCh);
 					modules[0].set(\imod, ((10.0 / params[0].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 					modules[1].set(\isCarrier, 1);
+					modules[1].set(\l4, 0);
 					modules[1].set(\outCh, outCh);
 					modules[1].set(\imod, ((10.0 / params[1].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 					modules[2].set(\isCarrier, 1);
+					modules[2].set(\l4, 0);
 					modules[2].set(\outCh, outCh);
 					modules[2].set(\imod, ((10.0 / params[2].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 					modules[3].set(\isCarrier, 1);
+					modules[3].set(\l4, 0);
 					modules[3].set(\outCh, outCh);
 					modules[3].set(\imod, ((10.0 / params[3].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 					modules[4].set(\isCarrier, 1);
+					modules[4].set(\l4, 0);
 					modules[4].set(\outCh, outCh);
 					modules[4].set(\imod, ((10.0 / params[4].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 					modules[5].set(\isCarrier, 1);
+					modules[5].set(\l4, 0);
 					modules[5].set(\outCh, outCh);
 					modules[5].set(\imod, ((10.0 / params[5].at(\fmod)).pow(0.33)) * (amp / 6)); // Psychoacoustic amplitude compensation for carriers
 				},

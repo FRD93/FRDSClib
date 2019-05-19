@@ -79,7 +79,7 @@ FRDLooperPlugIn {
 	inGain_ { | inGain |
 		inGain_r = inGain;
 		looper.set(\inGain, inGain_r);
-		if(hasGUI, {inGain_s.value_(inGain_r.dbamp)});
+		if(hasGUI, {inGain_s.value_(inGain_r.dbamp * 0.75)});
 		^inGain_r
 	}
 
@@ -135,7 +135,7 @@ FRDLooperPlugIn {
 		outCh_n = NumberBox().action_({ | num | this.outCh_(num.value.asInteger)}).value_(outCh_r);
 		time_n = NumberBox().action_({ | num | this.time_(num.value)}).value_(time_r);
 		feedback_k = Knob().action_({ | num | this.feedback_(num.value)}).value_(feedback_r);
-		inGain_s = Slider().action_({|val| this.inGain_(val.value.ampdb)}).value_(inGain_r.dbamp);
+		inGain_s = Slider().action_({|val| this.inGain_((val.value * 1.5).ampdb)}).value_(inGain_r.dbamp * 0.75);
 		outGain_s = Slider().action_({|val| this.outGain_(val.value.ampdb)}).value_(outGain_r.dbamp);
 
 

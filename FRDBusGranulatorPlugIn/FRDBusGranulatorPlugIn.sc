@@ -125,8 +125,9 @@ FRDBusGranulatorPlugIn {
 			var input, env, grain;
 			atk = atk.clip(0.0, 1.0);
 			input = InFeedback.ar(inCh, 1);
-			env = EnvGen.ar(Env.new([0, 1, 0], [dur*atk, dur*(1.0-atk)], [curve.neg, curve]), levelScale: amp, doneAction: 0);
+			env = EnvGen.ar(Env.new([0, 1, 0], [dur*atk, dur*(1.0-atk)], [curve.neg, curve]), levelScale: amp, doneAction: 2);
 			grain = Pan2.ar(input * env, pan);
+			grain = ExpDistorsion.ar(grain, 4);
 			Out.ar( outCh, grain );
 		} ).writeDefFile.add;
 	}
