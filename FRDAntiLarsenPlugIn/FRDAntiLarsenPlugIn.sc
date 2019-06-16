@@ -1,11 +1,7 @@
-FRDMono2StereoPlugIn {
+FRDAntiLarsenPlugIn {
 
-	// System variables
-	var presetPath, presets, input, name_r, inCh_r, outCh_r, inGain_r, numChOut_r, addAction_r, actionNode_r;
-	var path;
-	// GUI variables
-	var window, inCh_n, outCh_n, inGain_s, hasGUI;
-
+	var inCh_r, outCh_r, addAction_r, actionNode_r, synth;
+	var hasGUI, window, inCh_n, outCh_n;
 
 	// new method
 	*new { | inCh=20, outCh=0, addAction='addToHead', actionNode=1 |
@@ -13,14 +9,10 @@ FRDMono2StereoPlugIn {
 	}
 
 	init { | inCh, outCh, addAction, actionNode |
-
-		// INTERNAL VARIABLES
-		path =  "".resolveRelative;
 		inCh_r = inCh;
 		outCh_r = outCh;
 		addAction_r = addAction;
 		actionNode_r = actionNode;
-		input = Synth(\FRDMono2Stereo, [ \inCh, inCh_r, \outCh, outCh_r ], actionNode_r, addAction_r);
 		hasGUI = false;
 	}
 
@@ -31,6 +23,9 @@ FRDMono2StereoPlugIn {
 	}
 
 
+	spawn { | amp=0.5, dur=0.1, atk=0.1, curve=1, pan=0 |
+		Synth(\FRDBusGrain, [\inCh, inCh_r, \outCh, outCh_r, \amp, amp, \dur, dur, \atk, atk, \curve, curve, \pan, pan], actionNode_r, addAction_r);
+	}
 
 
 
@@ -45,7 +40,7 @@ FRDMono2StereoPlugIn {
 	}
 	inCh_ { | inCh |
 		inCh_r = inCh;
-		input.set(\inCh, inCh_r);
+		synth.set(\inCh, inCh_r);
 		if(hasGUI, {inCh_n.value_(inCh_r)});
 		^inCh_r
 	}
@@ -56,7 +51,7 @@ FRDMono2StereoPlugIn {
 	}
 	outCh_ { | outCh |
 		outCh_r = outCh;
-		input.set(\outCh, outCh_r);
+		synth.set(\outCh, outCh_r);
 		if(hasGUI, {outCh_n.value_(outCh_r)});
 		^outCh_r
 	}
@@ -67,7 +62,7 @@ FRDMono2StereoPlugIn {
 
 	// get input synth
 	synth {
-		^input
+		^synth
 	}
 
 
@@ -79,8 +74,7 @@ FRDMono2StereoPlugIn {
 		// GUI WIDGETS
 		inCh_n = NumberBox().action_({ | num | this.inCh_(num.value.asInteger)}).value_(inCh_r);
 		outCh_n = NumberBox().action_({ | num | this.outCh_(num.value.asInteger)}).value_(outCh_r);
-
-		window = Window("FRDMono2StereoPlugIn", Rect(width: 20, height: 20)).onClose_({hasGUI = false});
+		window = Window("FRDAntiLarsenPlugIn", Rect(width: 20, height: 20)).onClose_({hasGUI = false});
 		window.layout_(
 			HLayout(
 				VLayout(
@@ -100,8 +94,29 @@ FRDMono2StereoPlugIn {
 	* STORE THE SYNTH DEFINITION TO FILE
 	*/
 	writeSynthDef {
-		SynthDef( \FRDMono2Stereo, { | inCh=20, outCh=0 |
-			Out.ar( outCh, (In.ar(inCh, 1) )! 2 );
+		SynthDef( \FRDAntiLarsen, { | inCh=20, outCh=0, multiplier=10, coeff=0.8 |
+			var input, chain, outliers, size=128;
+			var mean, max;
+			input = InFeedback.ar(inCh, 1);
+			chain = FFT(LocalBuf(size), input, wintype: 1);
+			outliers = PV_Copy(chain, LocalBuf(size));
+			chain = chain.pvcalc(size, { | mags, phases |
+				mean = mags.sum / mags.size;
+				mean = 10;
+				mags.do({| mag |
+					//mean = mean + mag.abs;
+				});
+
+				[mags, phases]
+			});
+			Poll.kr(Impulse.kr(10), mean, \sum);
+			outliers = PV_MagAbove(outliers, multiplier * mean);
+			chain = chain.pvcalc2(outliers, size, { | magnitudes1, phases1, magnitudes2, phases2 |
+				magnitudes1 = magnitudes1 - (magnitudes2 * coeff);
+				[magnitudes1, phases1]
+			});
+			chain = IFFT(chain);
+			Out.ar( outCh, chain );
 		} ).writeDefFile.add;
 	}
 

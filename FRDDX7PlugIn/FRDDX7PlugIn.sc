@@ -34,47 +34,21 @@ FRDDX7PlugIn {
 			var modules, carriers, modulators, params, indexes, freqs, imods;
 			var patch, lastModulators;
 			var busses = 6.collect({ Bus.audio(Server.local, 1) });
-			numCarriers = numCarriers.clip(1, 6) - 1;
+			numCarriers = numCarriers.clip(0, 5);
 			Server.local.sync();
 			if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+			freqs = freqs.clip(20, 20000);
 			imods = 6.collect({rrand(imod[0], imod[1])});
-			//modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.0, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
 			modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
 			indexes = (0..5).scramble;
-			carriers = indexes[0..numCarriers];
-			modulators = indexes[numCarriers+1..];
+			carriers = indexes[0..numCarriers-1];
+			modulators = indexes[numCarriers..];
+			if(modulators.size == 1, {modulators = modulators[0] ! 2;});
 			patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
 			lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
 			patch.do({ | pa |
 				modules[pa[0]].set(\extCh, busses[pa[1]]);
-			});/*
-			if(lastModulators.size == carriers.size, {
-				"==".postln;
-				lastModulators.do({|modID, id|
-					[modules[carriers[id]], busses[modID]].postln;
-					//modules[carriers[id]].set(\extCh, busses[modID]);
-					//modules[carriers[id]].set(\extCh, busses[modID]);
-				});
 			});
-			if(lastModulators.size > carriers.size, {
-				">".postln;
-				lastModulators.do({|modID, id|
-					/*
-					carriers.postln;
-					modulators.postln;
-					[carriers[id % carriers.size], "<-", modID].postln;
-					*/
-					[modules[carriers[id % carriers.size]], busses[modID]].postln;
-					modules[carriers[id % carriers.size]].set(\extCh, busses[modID]);
-				});
-			});
-			if(lastModulators.size < carriers.size, {
-				"<".postln;
-				carriers.do({|carID, id|
-					[modules[carID], busses[lastModulators[id % lastModulators.size]]].postln;
-					modules[carID].set(\extCh, busses[lastModulators[id % lastModulators.size]]);
-				});
-			});*/
 			carriers.do({ | cID, id |
 				modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
 				lastModulators.do({|iModID, id2|
@@ -82,6 +56,7 @@ FRDDX7PlugIn {
 						modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
 					});
 				});
+
 				modules[cID].set(\isCarrier, 1);
 				modules[cID].set(\l4, 0);
 				modules[cID].set(\fmod, freq);
@@ -92,7 +67,7 @@ FRDDX7PlugIn {
 			// Must free buffers when done!
 			(dur+0.2).wait;
 			busses.do({|bus| bus.free(clear: true)});
-		}.play(AppClock);
+		}.play;
 	}
 
 
@@ -897,6 +872,7 @@ FRDDX7PlugIn {
 			imod = Select.kr(isCarrier > 0, [fmod * imod, imod]);
 			mod = SinOsc.ar(fmod, 0,  imod * env);
 			LocalOut.ar([mod * feedback]);
+			mod = Select.ar(isCarrier > 0, [mod, Limiter.ar(LeakDC.ar(mod))]);
 			Out.ar(outCh, mod);
 		}).writeDefFile.add;
 	}

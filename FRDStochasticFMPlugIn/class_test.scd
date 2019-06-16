@@ -1,14 +1,66 @@
 
+(
+t = TempoClock(tempo: 5, beats: 4, queueSize: 32768);
+f = FRDStochasticFMPlugIn(tempoClock: t, freq_min: 100, freq_max: 4000, freq_step: 41, freq_curr: 180, imod_min: 0.1);
+f.play(t, [1, 0, 0]);
+f.showGUI;
+)
+f.play;
+f.stop;
 
-f = FRDStochasticFMPlugIn()
-d = FRDDX7PlugIn()
-d.createRandomRelativePatch(numCarriers: 1, freq: exprand(100, 1000), amp: rrand(0.3, 0.6), dur: exprand(0.5, 4), harmonic: 0.5.coin, imod: #[1, 3], outCh: [0, 1].choose);
+f.calcDurWait
+f.next
+d = f.dict
 
-r = FRDRandomWalk(0, 1, 0.1, 0.5)
+t.tempo_(5)
 
-r.calcNext
+d.at(\Parameters).at(\complexity)
+d.at(\Parameters).at(\complexity).at(\curr)
 
-r = FRDRandomWalk(-1, 2, 0.05, 0);
-r.calcNextW(0, 0.25, 0.75)
 
-r.get
+[0, 1, 2, 3, 4, 5, 6, 7][3..]
+
+s.options.memSize
+s.options.numPrivateAudioBusChannels
+s.options.memSize = 2097152
+s.options.numPrivateAudioBusChannels = 32768
+s.quit
+s.boot
+b = Bus.audio(s, 1)
+b.free
+
+s.freqscope
+
+TempoClock.new()
+
+(0..5).clip(2, 3)
+
+
+
+(
+
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

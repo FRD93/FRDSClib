@@ -99,7 +99,7 @@ FRDBusGranulatorPlugIn {
 				});
 			})
 		});
-		window = Window("FRDMono2StereoPlugIn", Rect(width: 20, height: 20)).onClose_({hasGUI = false});
+		window = Window("FRDBusGranulatorPlugIn", Rect(width: 20, height: 20)).onClose_({hasGUI = false});
 		window.layout_(
 			HLayout(
 				VLayout(

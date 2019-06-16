@@ -15,19 +15,42 @@ FRDRandomWalk {
 		current_m = initialState;
 	}
 
+	// Set new current state
 	setState { | state |
 		current_m = state;
 		^current_m
 	}
 
-	calcNext {
+
+	// Set min boundary
+	min {
+		^min_m
+	}
+	min_ { | min |
+		min_m = min;
+		^min_m
+	}
+
+
+	// Set max boundary
+	max {
+		^max_m
+	}
+	max_ { | max |
+		max_m = max;
+		^max_m
+	}
+
+	// Calc next state
+	next {
 		current_m = current_m + (step_m * [-1, 0, 1].choose);
 		while ( { current_m > max_m }, { current_m = current_m - step_m });
 		while ( { current_m < min_m  }, { current_m = current_m + step_m });
 		^current_m
 	}
 
-	calcNextW { | down=0.75, curr=0, up=0.25 |
+	// Calc next state with weights
+	nextw { | down=0.75, curr=0, up=0.25 |
 		var weights = [down, curr, up].normalizeSum;
 		current_m = current_m + (step_m * [-1, 0, 1].wchoose(weights));
 		while ( { current_m > max_m }, { current_m = current_m - step_m });
