@@ -11,6 +11,7 @@ FRDRandomWalk {
 	init { | min, max, step, initialState |
 		min_m = min;
 		max_m = max;
+		if(max_m < min_m, {var tmp = max_m; max_m = min_m; min_m = max_m;});
 		step_m = step;
 		current_m = initialState;
 	}
@@ -28,7 +29,8 @@ FRDRandomWalk {
 	}
 	min_ { | min |
 		min_m = min;
-		^min_m
+		if(max_m < min_m, {var tmp = max_m; max_m = min_m; min_m = max_m;});
+		^this
 	}
 
 
@@ -38,7 +40,17 @@ FRDRandomWalk {
 	}
 	max_ { | max |
 		max_m = max;
-		^max_m
+		if(max_m < min_m, {var tmp = max_m; max_m = min_m; min_m = max_m;});
+		^this
+	}
+
+	// Seet step
+	step {
+		^step_m
+	}
+	step_ { | step |
+		step_m = step;
+		^this
 	}
 
 	// Calc next state

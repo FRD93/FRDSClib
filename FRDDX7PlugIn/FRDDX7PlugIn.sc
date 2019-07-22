@@ -12,6 +12,10 @@ FRDDX7PlugIn {
 
 	}
 
+	randSeed_ { | seed |
+		thisThread.randSeed_(seed);
+	}
+
 
 	// Spawn synth with absolute duration (Rx) times
 	spawnModuleAbsolute { | fmod=440, imod=2, feedback=0.0, extCh=128, outCh=100, l4=0, l1=1, l2=0.7, l3=0.2, r1=0.01, r2=0.1, r3=0.7, r4=1 |

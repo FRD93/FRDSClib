@@ -240,7 +240,8 @@ FRDStochasticFMPlugIn {
 
 	// Set a parameter with [\min, \max, \step]
 	param_ { | name, min, max, step |
-		dict.at(\Parameters).at(name.asSymbol).put(\min, min).put(\max, max).put(\step, step)
+		dict.at(\Parameters).at(name.asSymbol).put(\min, min).put(\max, max).put(\step, step);
+		dict.at(\RandomWalks).at(name.asSymbol).min_(min).max_(max).step_(step);
 	}
 
 	// Function to calculate all next current values
@@ -282,7 +283,6 @@ FRDStochasticFMPlugIn {
 						outCh: dict.at(\Parameters).at(\outCh).at(\curr)
 					);
 				}.fork;
-				dict.at(\InternalParameters).at(\wait).postln;
 				dict.at(\InternalParameters).at(\wait).wait;
 			}
 		}.play(clock, quant);

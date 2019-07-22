@@ -3,13 +3,27 @@
 d = FRDDX7PlugIn();
 r = Routine{
 	loop{
-		d.createRandomRelativePatch(numCarriers: 1, freq: exprand(50, 10000), amp: rrand(0.1, 0.5), dur: exprand(0.05, 2), harmonic: 0.5.coin, imod: #[0.1, 5], outCh: [0, 1].choose);
+		d.createRandomRelativePatch(numCarriers: 1, freq: exprand(50, 10000), amp: rrand(0.6, 0.85), dur: exprand(0.05, 2), harmonic: 0.5.coin, imod: #[0.1, 5], outCh: [0, 1].choose);
 		rrand(0.05, 0.2).wait;
 	}
 }.play;
 )
 r.stop
 
+
+(
+d = FRDDX7PlugIn();
+r = Routine{
+	inf.do({|id|
+		if(id%4 == 0, {thisThread.randSeed_(86735)});
+		d.createRandomRelativePatch(numCarriers: 1, freq: exprand(50, 10000) * ((id+1)%4) / 2, amp: rrand(0.1, 0.5), dur: 0.2, harmonic: id%2, imod: #[0.1, 5], outCh: [0, 1].choose);
+//		0.2.wait;
+		if(id%8 == 0, {0.1.wait;}, {if(id%9 == 0, {0.1.wait;}, {0.2.wait});});
+
+	});
+}.play;
+)
+r.stop
 
 
 (
