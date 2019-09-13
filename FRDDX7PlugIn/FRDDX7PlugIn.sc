@@ -33,46 +33,106 @@ FRDDX7PlugIn {
 
 
 	// Create random module patch in relative mode
-	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0 |
-		Routine{
-			var modules, carriers, modulators, params, indexes, freqs, imods;
-			var patch, lastModulators;
-			var busses = 6.collect({ Bus.audio(Server.local, 1) });
-			numCarriers = numCarriers.clip(0, 5);
-			Server.local.sync();
-			if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
-			freqs = freqs.clip(20, 20000);
-			imods = 6.collect({rrand(imod[0], imod[1])});
-			modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
-			indexes = (0..5).scramble;
-			carriers = indexes[0..numCarriers-1];
-			modulators = indexes[numCarriers..];
-			if(modulators.size == 1, {modulators = modulators[0] ! 2;});
-			patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
-			lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
-			patch.do({ | pa |
-				modules[pa[0]].set(\extCh, busses[pa[1]]);
-			});
-			carriers.do({ | cID, id |
-				modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
-				lastModulators.do({|iModID, id2|
-					if(0.5.coin, {
-						modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
-					});
+	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0, nrtTimeStamp=nil |
+		if(nrtTimeStamp == nil, {
+			Routine{
+				var modules, carriers, modulators, params, indexes, freqs, imods;
+				var patch, lastModulators;
+				var busses = 6.collect({ Bus.audio(Server.local, 1) });
+				numCarriers = numCarriers.clip(0, 5);
+				Server.local.sync;
+				if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+				freqs = freqs.clip(20, 20000);
+				imods = 6.collect({rrand(imod[0], imod[1])});
+				modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
+				indexes = (0..5).scramble;
+				carriers = indexes[0..numCarriers-1];
+				modulators = indexes[numCarriers..];
+				if(modulators.size == 1, {modulators = modulators[0] ! 2;});
+				patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+				lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
+				patch.do({ | pa |
+					modules[pa[0]].set(\extCh, busses[pa[1]]);
 				});
 
-				modules[cID].set(\isCarrier, 1);
-				modules[cID].set(\l4, 0);
-				modules[cID].set(\fmod, freq);
-				modules[cID].set(\outCh, outCh);
-				modules[cID].set(\feedback, 0);
-				modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
-			});
-			// Must free buffers when done!
-			(dur+0.2).wait;
-			busses.do({|bus| bus.free(clear: true)});
-		}.play;
+				carriers.do({ | cID, id |
+					modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
+					lastModulators.do({|iModID, id2|
+						if(0.5.coin, {
+							modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
+						});
+					});
+					modules[cID].set(\isCarrier, 1);
+					modules[cID].set(\l4, 0);
+					modules[cID].set(\fmod, freq);
+					modules[cID].set(\feedback, 0);
+					modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
+					modules[cID].set(\outCh, outCh);
+				});
+				// Must free buffers when done!
+				(dur+0.01).wait;
+				Server.local.sync;
+				busses.do({|bus| bus.free(clear: true)});
+			}.play;
+		});
 	}
+
+
+	// Create random module patch in relative mode NRT
+	createRandomRelativePatchNRT { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0, nrtTimeStamp=0, startNode=1002, startPrivateBus=40 |
+	// 		var rs = [r1, r2, r3, r4].normalizeSum * dur;
+	// ^Synth.head(Server.local, \FRDDX7_module, [\fmod, fmod, \imod, imod, \feedback, feedback, \extCh, extCh, \outCh, outCh, \l4, l4, \l1, l1, \l2, l2, \l3, l3, \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]);
+	var score = [];
+	var carriers, modulators, params, indexes, freqs, imods;
+	var patch, lastModulators;
+	var busses = 6.collect({ | id | startPrivateBus + id });
+	var modules = 6.collect({ | id |  startNode + id });
+	numCarriers = numCarriers.clip(0, 5);
+	if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+	freqs = freqs.clip(20, 20000);
+	imods = 6.collect({rrand(imod[0], imod[1])});
+
+	6.do({|id|
+		var li = {rrand(0.0, 1.0)} ! 6;
+		var rs = ({rrand(0.0, 1.0)} ! 6).normalizeSum * dur;
+		score = score ++ [[
+			nrtTimeStamp, [\s_new, \FRDDX7_module, modules[id], 0, 0, \fmod, freqs[id], \imod, imods[id], \feedback, exprand(0.001, 1.0), \extCh, 128, \outCh, busses[id], \l4, li[3], \l1, li[0], \l2, li[1], \l3, li[2], \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]
+		]];
+	});
+
+	indexes = (0..5).scramble;
+	carriers = indexes[0..numCarriers-1];
+	modulators = indexes[numCarriers..];
+	if(modulators.size == 1, {modulators = modulators[0] ! 2;});
+	patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+	lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
+
+	patch.do({ | pa |
+		score = score ++ [[
+			nrtTimeStamp, [\n_set, modules[pa[0]], \extCh, busses[pa[1]] ]
+		]];
+	});
+
+	carriers.do({ | cID, id |
+		score = score ++ [[
+			nrtTimeStamp, [\n_set, modules[cID], \extCh, busses[modulators[id % lastModulators.size]] ]
+		]];
+
+		lastModulators.do({|iModID, id2|
+			if(0.5.coin, {
+				score = score ++ [[
+					nrtTimeStamp, [\n_set, modules[iModID], \outCh, busses[modulators[id % lastModulators.size]] ]
+				]];
+			});
+		});
+
+		score = score ++ [[
+			nrtTimeStamp, [\n_set, modules[cID], \isCarrier, 1, \l4, 0, \fmod, freq, \feedback, 0, \imod,  ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal, \outCh, outCh]
+		]];
+
+	});
+	^score
+}
 
 
 
@@ -877,6 +937,7 @@ FRDDX7PlugIn {
 			mod = SinOsc.ar(fmod, 0,  imod * env);
 			LocalOut.ar([mod * feedback]);
 			mod = Select.ar(isCarrier > 0, [mod, Limiter.ar(LeakDC.ar(mod))]);
+			mod = HPF.ar(mod, 20);
 			Out.ar(outCh, mod);
 		}).writeDefFile.add;
 	}

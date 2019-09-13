@@ -69,7 +69,8 @@ FRDSequencer {
 					patterns.add( pattern.view );
 					// Add pattern to pattern list
 					patternObjects = patternObjects.add( pattern );
-				}, path: thisPath );
+					window.close;
+				}, path: thisPath ++ "preset/" );
 			} );
 			window.view.layout = VLayout(
 				newButton, fromFileButton
@@ -158,7 +159,7 @@ FRDSequencer {
 		pattern.textFuncs = Array.fill( pattern.numbeats * pattern.resolution, { | bID |
 			Array.fill( pattern.instrArgs.size, { | iID |
 				Array.fill( pattern.instrArgs[ iID ][ 1 ].size, { | id |
-					"{ | index |\n%\n}".format(pattern.instrArgs[iID][2][id]);
+					"{ | onsetID, repetitionID |\n%\n}".format(pattern.instrArgs[iID][2][id]);
 				} );
 			} );
 		} );
@@ -191,7 +192,7 @@ FRDSequencer {
 
 			pattern.addInstrButton = Button().states_( [ [ "Add Instr" ] ] ).action_( {
 				var window = Window.new("Add Instrument").alwaysOnTop_( true ).front;
-				var text = TextView().string_( "[ \\NAME, [ \\PARAM1, \\PARAM2, \\etc ] ]" );
+				var text = TextView().string_( "[ \\NAME, [ \\PARAM1, \\PARAM2, \\etc ], [val1, val2, etc] ]" );
 				var addBtn = Button().states_( [ [ "Add" ] ] ).action_( {
 					if( text.string.interpret.class == Array, {
 						// Add instr to instrArgs
@@ -202,7 +203,7 @@ FRDSequencer {
 								//var numArgs = text.string[1].findAll( "," ).size + 1;
 								var numArgs = text.string.interpret[1].size;
 								var argStrings = numArgs.collect({|argID|
-									"{ | index |\n%\n}".format(text.string.interpret[2][argID]);
+									"{ | onsetID, repetitionID |\n%\n}".format(text.string.interpret[2][argID]);
 								});
 								//pattern.textFuncs[ bID ] = pattern.textFuncs.at( bID ).add( "{ | index |\n1\n}" ! numArgs );
 								pattern.textFuncs[ bID ] = pattern.textFuncs.at( bID ).add( argStrings );
@@ -379,6 +380,8 @@ FRDSequencer {
 				} );
 			} );
 
+			pattern.repetitionsText = TextField().string_(pattern.repetitions.asString).action_({|val| pattern.repetitions = val.value.asInteger});
+
 			pattern.view.layout_(
 				HLayout(
 					VLayout(
@@ -387,6 +390,9 @@ FRDSequencer {
 							pattern.saveButton, pattern.loadButton, pattern.removeButton
 						),
 						nil,
+						HLayout(
+							StaticText().string_("Repeats: ").align_(\center), pattern.repetitionsText, nil
+						),
 						HLayout(
 							pattern.randomizeButton, pattern.gameOfLifeButton
 						),
@@ -420,11 +426,10 @@ FRDSequencer {
 
 	playPattern { | pattern, clock, quant |
 		var routine = Routine{
-			pattern.repetitions.do( { | playID |
+			pattern.repetitions.do( { | repetitionID |
 
 
 				// GAME OF LIFE
-
 				Routine{
 					if(pattern.gameOfLifeButton.value == 1, {
 						pattern.onsets.do({|onsetList, index|
@@ -457,10 +462,10 @@ FRDSequencer {
 
 
 
-				pattern.onsets.do( { | onsetList, index |
+				pattern.onsets.do( { | onsetList, onsetID |
 					pattern.instrArgs.do( { | instrArg, instrArgID |
 						if( onsetList[ instrArgID ] == 1, {
-							var tf = pattern.textFuncs.at( index ).at( instrArgID ).collect( { | func | func.interpret.value( playID ) } );
+							var tf = pattern.textFuncs.at( onsetID ).at( instrArgID ).collect( { | func | func.interpret.value( onsetID, repetitionID ) } );
 							// Un Synth chiamato \code valuterà solo le funzioni al suo interno, senza richiamare l'istanza di Synth
 							if(instrArg[ 0 ] != \code, {Synth( instrArg[ 0 ], [ instrArg[ 1 ], tf ].flop.flat );});
 						} );

@@ -1,7 +1,7 @@
 FRDSFGranulator {
 
 	var win, sfv, delete, setrate, buf, sf, sndrout, ctrlrout, ctrlseed, ctrlrandspeed, ctrlseedrout, netaddr, sfv_selectionrout, sfv_selections;
-	var pan, pos, duration, which, rate, randrate, wait, outCh=0, name_sfg, atk=0.5;
+	var pan, pan2, pos, duration, which, rate, randrate, wait, outCh=0, name_sfg, atk=0.5;
 	var amp = 0.7, durScale = 8, minGrainsPerSecond = 8, maxGrainsPerSecond = 64, ctrlDelta=0.1;
 
 	*new { | name="SFG1", server, sf_path, video_addr=57200, parent=nil |
@@ -24,6 +24,7 @@ FRDSFGranulator {
 
 		pos=[];
 		duration=[];
+		pan2 = 0.0;
 		buf = Buffer.read(server, sf_path);
 		netaddr = NetAddr("localhost", video_addr);
 		sf = SoundFile.new;
@@ -123,7 +124,8 @@ FRDSFGranulator {
 				// pos
 				pos=[];
 				// pan
-				pan = rrand( -1.0, 1.0 );
+				//pan = rrand( -1.0, 1.0 );
+				pan = rrand(pan2.neg, pan2);
 				sfv_selections.size.do({|id|
 					if(sfv_selections[id][1] != 0, {
 						pos = pos.add(rrand(sfv_selections[id][0], sfv_selections[id][0]+sfv_selections[id][1]));
@@ -212,7 +214,7 @@ FRDSFGranulator {
 	}
 
 	pan_ { | newPan |
-		pan = newPan;
+		pan2 = newPan;
 	}
 
 	pan {

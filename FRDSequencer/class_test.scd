@@ -23,6 +23,7 @@ t.tempo_(1.5)
 c = Routine{
 	loop{
 	f.patterns.do( { | pattern |
+			pattern.postln;
 		f.playPattern( pattern, t, [1, 0, 0] );
 		((pattern.numbeats * pattern.repetitions) ).wait;
 		//(1 / pattern.resolution).wait;
