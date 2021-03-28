@@ -938,7 +938,9 @@ FRDDX7PlugIn {
 			LocalOut.ar([mod * feedback]);
 			mod = Select.ar(isCarrier > 0, [mod, Limiter.ar(LeakDC.ar(mod))]);
 			mod = HPF.ar(mod, 20);
-			Out.ar(outCh, mod);
+
+			Select.kr( isCarrier > 0, [ Out.ar(outCh, mod), Out.ar(outCh + [1], mod ) ]);
+			//Out.ar(outCh, mod);
 		}).writeDefFile.add;
 	}
 

@@ -27,7 +27,6 @@ FRDMarkovChain {
 	// Calc next step in the chain
 	next {
 		var prob = transitionMatrix_m.flop[states_m.find([current_state_m])];
-		prob.postln;
 		current_state_m = states_m.wchoose(prob);
 		^current_state_m
 	}

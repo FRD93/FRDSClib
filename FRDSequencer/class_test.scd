@@ -8,7 +8,7 @@ f.patterns[0]
 (
 Routine{
 	100.do({
-		t.tempo_(t.tempo + 0.002);
+		t.tempo_(t.tempo - 0.004);
 		0.05.wait;
 	})
 }.play

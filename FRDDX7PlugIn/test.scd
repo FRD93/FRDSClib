@@ -39,6 +39,23 @@ r.stop
 
 
 
+// NRT
+(
+var dur = 6;
+Routine{
+	(48..98).do({ | id |
+		var score = d.createRandomRelativePatchNRT(numCarriers: 3, freq: id.midicps, amp: 2, dur: dur, harmonic: false, imod: [rrand(0.5, 4), rrand(0.5, 13)]);
+		score = score ++ [[dur + 1, [\c_set, 0, 0]]];
+		o = ServerOptions.new.numOutputBusChannels = 2;
+		Score.recordNRT(score, "help-oscFile", "/Users/admin/Downloads/test/" ++ id ++ ".aiff", options: o); // synthesize
+		score.dopostln;
+		1.wait;
+	});
+}.play(AppClock);
+)
+
+
+
 
 
 s.record

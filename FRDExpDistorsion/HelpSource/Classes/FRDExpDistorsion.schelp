@@ -1,0 +1,29 @@
+TITLE:: ExpDistorsion
+summary:: Distorsion class
+categories:: Francesco Roberto Dani UGens helper classes
+related:: Object
+
+DESCRIPTION::
+This class performs exponential distorsion on the given signal. The formula can be found at pages 124-125 of "DAFX - Digital Audio Effects" book by Ugo Zolzer.
+
+
+CLASSMETHODS::
+
+METHOD:: ar
+Initialize distorsion effect.
+
+ARGUMENT:: in
+Signal to be distorted.
+
+ARGUMENT:: boost
+Multiply input signal to this coefficient. If >1.0 distorsion is augmented.
+
+
+INSTANCEMETHODS::
+
+
+EXAMPLES::
+
+code::
+{ExpDistorsion.ar(SinOsc.ar(440+SinOsc.ar(220, 0, 220, 220), 0, 0.5)*Decay2.ar(Impulse.ar(6)), SinOsc.ar(0.25, 0, 1, 2)) ! 2}.play;
+::
