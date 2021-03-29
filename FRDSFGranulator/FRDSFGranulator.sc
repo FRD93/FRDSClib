@@ -4,13 +4,13 @@ FRDSFGranulator {
 	var pan, pan2, pos, duration, which, rate, randrate, wait, outCh=0, name_sfg, atk=0.5;
 	var amp = 0.7, durScale = 8, minGrainsPerSecond = 8, maxGrainsPerSecond = 64, ctrlDelta=0.1;
 
-	*new { | name="SFG1", server, sf_path, video_addr=57200, parent=nil |
+	*new { | name="SFG1", sf_path, video_addr=57200, parent=nil |
 
-		^super.new.init(name, server, sf_path, video_addr, parent);
+		^super.new.init(name, sf_path, video_addr, parent);
 
 	}
 
-	init {  | name="SFG1", server, sf_path, video_addr=57200, parent=nil |
+	init {  | name="SFG1", sf_path, video_addr=57200, parent=nil |
 
 		name_sfg = name;
 
@@ -25,7 +25,7 @@ FRDSFGranulator {
 		pos=[];
 		duration=[];
 		pan2 = 0.0;
-		buf = Buffer.read(server, sf_path);
+		buf = Buffer.read(Server.default, sf_path);
 		netaddr = NetAddr("localhost", video_addr);
 		sf = SoundFile.new;
 		sf.openRead(sf_path);
