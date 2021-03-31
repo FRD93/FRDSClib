@@ -1,0 +1,37 @@
+TITLE:: FRDDoppler
+summary:: Apply doppler effect on soundfile.
+categories:: FRD-PlugIns
+related:: FRDDoppler
+
+DESCRIPTION::
+Load a soundfile, compute the doppler effect in real time and render the result to file using NRT mode.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+Create the instance of the class.
+returns:: FRDDoppler instance.
+
+
+INSTANCEMETHODS::
+
+METHOD:: showGUI
+Show the graphical user interface.
+
+METHOD:: writeSynthDef
+Write internal synth definitions (to be run only once when installing this class!).
+
+
+
+EXAMPLES::
+
+Basic usage:
+
+code::
+// Once GUI is shown, load sound file and preview/render the result.
+(
+d = FRDDoppler();
+d.showGUI();
+)
+::

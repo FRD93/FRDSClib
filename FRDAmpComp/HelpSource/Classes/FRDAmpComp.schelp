@@ -1,0 +1,29 @@
+TITLE:: FRDAmpComp
+summary:: Psicoacoustic compensation.
+categories:: FRD-PlugIns
+related:: FRDAmpComp
+
+DESCRIPTION::
+Compute basic psicoacoustic amplitude compensation value of the desired frequency in language side. Formula: (10.0 / freq).pow(0.33).
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Get the corresponding amplitude compensation value from frequency.
+ARGUMENT:: freq
+Frequency.
+returns:: Float.
+
+
+
+
+EXAMPLES::
+
+Basic usage:
+
+code::
+w = FRDAmpComp(440);
+::
