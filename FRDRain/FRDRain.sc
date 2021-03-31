@@ -1,10 +1,10 @@
 FRDRain {
 	var win, hpnoise, white, brown, pink, gray, dust, drops;
 	var dustDensity=100, dropDensity=100, dropDecay=0.2, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=5000,
-	bpRq=1, rWet=0.5, rateRedux=0.5, bits=16;
-	var synth = nil;
+	bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, amp=0.33;
+	var synth = nil, routine=nil, reverb=nil, bus=nil;
 	var hpnoise_s, white_s, brown_s, gray_s, pink_s, dust_s, drops_s, dropDensityDecay_s2, dropFreqRq_s2, bpFreqRq_s2, dropFFreq_s,
-	dropFRq_s, bpFreq_s, bpRq_s, bpWet_s, rWet_s, rateRedux_s, bits_s, start_b;
+	dropFRq_s, bpFreq_s, bpRq_s, bpWet_s, rWet_s, rateRedux_s, bits_s, amp_s, start_b;
 
 	*new {
 		^super.new.init();
@@ -15,13 +15,48 @@ FRDRain {
 
 		SynthDef(\Ambience, { | hpnoise=0, white=0, pink=0, brown=0, gray=0, dust=0, dustDensity=100,
 			drops=0, dropDensity=10, dropDecay=0.3, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=500,
-			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1 |
+			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1, amp=0.125 |
 
 			var noise, src;
 			var hpNFreq = 1000;
 			var bpF;
 			var redux;
 			var aenv = EnvGen.ar(Env.adsr(fade_in, releaseTime: fade_out, sustainLevel: 1, curve: [2, 0, -2]), gate);
+
+			hpnoise = {HPF.ar(PinkNoise.ar(hpnoise.dbamp), hpNFreq)}!2;
+			white   = {WhiteNoise.ar(white.dbamp)}!2;
+			pink    = {PinkNoise.ar(pink.dbamp)}!2;
+			brown   = {BrownNoise.ar(brown.dbamp)}!2;
+			gray    = {GrayNoise.ar(gray.dbamp)}!2;
+			dust    = {Dust2.ar(dustDensity, dust.dbamp)}!2;
+
+			src = Mix([white, pink, brown, gray, dust, hpnoise]);
+
+			drops = {Decay.ar(Dust.ar(dropDensity, drops.dbamp), dropDecay) * PinkNoise.ar} ! 2;
+
+			src = Mix([src, drops]);
+
+			bpF = BPF.ar(src, bpFreq, bpRq);
+			src = SelectX.ar(bpWet, [src, bpF]);
+
+			src = VBJonVerb.ar(src);
+			src = src + CombC.ar(src, 2, 2, 6, 0.12);
+			src = src + CombC.ar(src, 3, 3, 16, 0.07);
+			src = src * aenv * amp;
+
+			redux = Latch.ar(src, Impulse.ar(SampleRate.ir * (rateRedux/2)));
+			redux = redux.round(0.5 ** bits);
+			Out.ar(0, SelectX.ar(1 + rWet, [src - redux, src, redux]));
+		}).add;
+		SynthDef(\AmbienceGrain, { | hpnoise=0, white=0, pink=0, brown=0, gray=0, dust=0, dustDensity=100,
+			drops=0, dropDensity=10, dropDecay=0.3, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=500,
+			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1, amp=0.125, out=0 |
+
+			var noise, src;
+			var hpNFreq = 1000;
+			var bpF;
+			var redux;
+			var aenv = EnvGen.ar(Env.perc(0.001, dropDecay), doneAction:2);
 
 			hpnoise = {HPF.ar(PinkNoise.ar(hpnoise.dbamp), hpNFreq)}!2;
 			white   = {WhiteNoise.ar(white.dbamp)}!2;
@@ -39,19 +74,20 @@ FRDRain {
 			bpF = BPF.ar(src, bpFreq, bpRq);
 			src = SelectX.ar(bpWet, [src, bpF]);
 
-			src = VBJonVerb.ar(src);
-			src = src + CombC.ar(src, 2, 2, 6, 0.12);
-			src = src + CombC.ar(src, 3, 3, 16, 0.07);
-			src = src * aenv;
-
+			src = src * aenv * amp;
 			redux = Latch.ar(src, Impulse.ar(SampleRate.ir * (rateRedux/2)));
 			redux = redux.round(0.5 ** bits);
-			Out.ar(0, SelectX.ar(1 + rWet, [src - redux, src, redux]));
+			Out.ar(out, SelectX.ar(1 + rWet, [src - redux, src, redux]));
 		}).add;
 
+		SynthDef(\AmbienceRev, { | in=20, out=0 |
+			var sig = In.ar(in, 2);
+			sig = GVerb.ar(sig, 270, 30, 0.8, 1, 15, 0.04);
+			Out.ar(out, sig);
+		}).add;
 	}
 	showGUI {
-		win = Window.new("Generatore di perturbazione").front;
+		win = Window.new("Rain generator").front;
 
 		hpnoise= -12;
 		white= -36;
@@ -143,21 +179,34 @@ FRDRain {
 				synth.set(\bits, bits);
 			})
 		}).value_(Map(bits, 1, 32, 0.0, 1.0));
+		amp_s = Slider().action_({ | val |
+			amp = val.value;
+			if(synth != nil, {
+				synth.set(\amp, amp);
+			});
+		}).value_(amp);
 
 		start_b = Button().states_([["Play"], ["Stop"]]).action_({ | val |
 			if(val.value == 1, {
-				synth = Synth(\Ambience, [\hpnoise, hpnoise, \white, white, \pink, pink, \brown, brown, \gray, gray, \dust, dust, \dustDensity, dustDensity,
+				bus = Bus.audio(Server.default, 2);
+				reverb = Synth.tail(Server.default, \AmbienceRev, [\in, bus, \out, 0]);
+				routine = Routine{
+					loop{
+						Synth.head(Server.default, \AmbienceGrain, [\hpnoise, hpnoise, \white, white, \pink, pink, \brown, brown, \gray, gray, \dust, dust, \dustDensity, dustDensity,
 					\drops, drops, \dropDensity, dropDensity, \dropDecay, dropDecay, \dropFFreq, dropFFreq, \dropFRq, dropFRq, \bpWet, bpWet, \bpFreq, bpFreq,
-					\bpRq, bpRq, \rWet, rWet, \rateRedux, rateRedux, \bits, bits]);
+					\bpRq, bpRq, \rWet, rWet, \rateRedux, rateRedux, \bits, bits, \amp, amp * 0.005, \out, bus]);
+						rrand(0.001, 0.01).wait;
+					}
+				}.play;
+				//synth = Synth(\Ambience, [\hpnoise, hpnoise, \white, white, \pink, pink, \brown, brown, \gray, gray, \dust, dust, \dustDensity, dustDensity, \drops, drops, \dropDensity, dropDensity, \dropDecay, dropDecay, \dropFFreq, dropFFreq, \dropFRq, dropFRq, \bpWet, bpWet, \bpFreq, bpFreq, \bpRq, bpRq, \rWet, rWet, \rateRedux, rateRedux, \bits, bits, \amp, amp]);
 			}, {
-				synth.release;
-				synth = nil;
+				routine.stop; reverb.free; bus.free;
 			});
 		});
 
 		win.layout_(
 			GridLayout.columns(
-				[StaticText().string_("HP Noise").align_(\center), hpnoise_s, [start_b, columns:14]],
+				[StaticText().string_("HP Noise").align_(\center), hpnoise_s, [start_b, columns:15]],
 				[StaticText().string_("White").align_(\center), white_s],
 				[StaticText().string_("Pink").align_(\center), pink_s],
 				[StaticText().string_("Gray").align_(\center), gray_s],
@@ -171,6 +220,7 @@ FRDRain {
 				[StaticText().string_("Bit Crush rate").align_(\center), rateRedux_s],
 				[StaticText().string_("Bit Crush bits").align_(\center), bits_s],
 				[StaticText().string_("Bit Crush wet").align_(\center), rWet_s],
+				[StaticText().string_("Amp"), amp_s],
 			)
 		);
 	}
@@ -179,7 +229,7 @@ FRDRain {
 	writeSynthDef {
 		SynthDef(\Ambience, { | hpnoise=0, white=0, pink=0, brown=0, gray=0, dust=0, dustDensity=100,
 			drops=0, dropDensity=10, dropDecay=0.3, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=500,
-			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1 |
+			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1, amp=0.125 |
 
 			var noise, src;
 			var hpNFreq = 1000;
@@ -206,11 +256,49 @@ FRDRain {
 			src = VBJonVerb.ar(src);
 			src = src + CombC.ar(src, 2, 2, 6, 0.12);
 			src = src + CombC.ar(src, 3, 3, 16, 0.07);
-			src = src * aenv;
+			src = src * aenv * amp;
 
 			redux = Latch.ar(src, Impulse.ar(SampleRate.ir * (rateRedux/2)));
 			redux = redux.round(0.5 ** bits);
 			Out.ar(0, SelectX.ar(1 + rWet, [src - redux, src, redux]));
+		}).writeDefFile;
+
+		SynthDef(\AmbienceGrain, { | hpnoise=0, white=0, pink=0, brown=0, gray=0, dust=0, dustDensity=100,
+			drops=0, dropDensity=10, dropDecay=0.3, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=500,
+			bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, fade_in=15, fade_out=5, gate=1, amp=0.125, out=0 |
+
+			var noise, src;
+			var hpNFreq = 1000;
+			var bpF;
+			var redux;
+			var aenv = EnvGen.ar(Env.perc(0.001, dropDecay), doneAction:2);
+
+			hpnoise = {HPF.ar(PinkNoise.ar(hpnoise.dbamp), hpNFreq)}!2;
+			white   = {WhiteNoise.ar(white.dbamp)}!2;
+			pink    = {PinkNoise.ar(pink.dbamp)}!2;
+			brown   = {BrownNoise.ar(brown.dbamp)}!2;
+			gray    = {GrayNoise.ar(gray.dbamp)}!2;
+			dust    = {Dust2.ar(dustDensity, dust.dbamp)}!2;
+
+			src = Mix([white, pink, brown, gray, dust, hpnoise]);
+
+			drops = {Decay.ar(Dust.ar(dropDensity, drops.dbamp), dropDecay) * PinkNoise.ar}!2;
+
+			src = Mix([src, drops]);
+
+			bpF = BPF.ar(src, bpFreq, bpRq);
+			src = SelectX.ar(bpWet, [src, bpF]);
+
+			src = src * aenv * amp;
+			redux = Latch.ar(src, Impulse.ar(SampleRate.ir * (rateRedux/2)));
+			redux = redux.round(0.5 ** bits);
+			Out.ar(out, SelectX.ar(1 + rWet, [src - redux, src, redux]));
+		}).writeDefFile;
+
+		SynthDef(\AmbienceRev, { | in=20, out=0 |
+			var sig = In.ar(in, 2);
+			sig = GVerb.ar(sig, 270, 30, 0.8, 1, 15, 0.04);
+			Out.ar(out, sig);
 		}).writeDefFile;
 	}
 
