@@ -87,7 +87,11 @@ FRDRain {
 		}).add;
 	}
 	showGUI {
-		win = Window.new("Rain generator").front;
+		win = Window.new("Rain generator").onClose_({
+			reverb.free;
+			bus.free;
+			routine.stop;
+		}).front;
 
 		hpnoise= -12;
 		white= -36;
