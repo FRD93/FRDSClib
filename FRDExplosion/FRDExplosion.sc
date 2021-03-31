@@ -74,11 +74,8 @@ FRDExplosion {
 		}).value_(amp);
 		win.layout_(
 			GridLayout.columns(
-				[StaticText().string_("Rev1 Room"), r1_s, [play_b, columns:7]],
-				[StaticText().string_("Rev1 Time"), t1_s],
-				[StaticText().string_("Rev2 Room"), r2_s],
+				[StaticText().string_("Rev1 Time"), t1_s, [play_b, columns:4]],
 				[StaticText().string_("Rev2 Time"), t2_s],
-				[StaticText().string_("Rev3 Room"), r3_s],
 				[StaticText().string_("Rev3 Time"), t3_s],
 				[StaticText().string_("Amp"), amp_s],
 			)

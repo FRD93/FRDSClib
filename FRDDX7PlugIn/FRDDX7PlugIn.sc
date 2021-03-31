@@ -44,7 +44,14 @@ FRDDX7PlugIn {
 				if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
 				freqs = freqs.clip(20, 20000);
 				imods = 6.collect({rrand(imod[0], imod[1])});
-				modules = 6.collect({ | id | this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) ) });
+				modules = 6.collect({ | id |
+					//this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) )
+					if( id < numCarriers, {
+						this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: 0, l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: 1 )
+					}, {
+						this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.01, 1.0), l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: rrand(0.4, 1.0) )
+					})
+				});
 				indexes = (0..5).scramble;
 				carriers = indexes[0..numCarriers-1];
 				modulators = indexes[numCarriers..];
@@ -70,7 +77,7 @@ FRDDX7PlugIn {
 					modules[cID].set(\outCh, outCh);
 				});
 				// Must free buffers when done!
-				(dur+0.01).wait;
+				(dur+0.1).wait;
 				Server.local.sync;
 				busses.do({|bus| bus.free(clear: true)});
 			}.play;
@@ -929,7 +936,8 @@ FRDDX7PlugIn {
 	writeSynthDef {
 		SynthDef(\FRDDX7_module, { | fmod=440, imod=2, feedback=0.0, extCh=128, outCh=100, l4=0, l1=1, l2=0.7, l3=0.2, r1=0.01, r2=0.1, r3=0.7, r4=1, isCarrier=0 |
 			var mod, feed, ext, env;
-			env = EnvGen.ar(Env.new([l4, l1, l2, l3, l4], [r1, r2, r3, r4], [(l1-l4).sign, (l2-l1).sign, (l3-l2).sign, (l4-l3).sign] * 2), doneAction: 2);
+			l4 = Select.kr(isCarrier > 0, [l4, 0]);
+			env = EnvGen.ar(Env.new([l4, l1, l2, l3, l4, l4], [r1, r2, r3, r4, r4], [(l1-l4).sign, (l2-l1).sign, (l3-l2).sign, (l4-l3).sign, 0] * 2), doneAction: 2);
 			ext = InFeedback.ar(extCh, 1);
 			feed = LocalIn.ar(1);
 			fmod = fmod + ext + feed;

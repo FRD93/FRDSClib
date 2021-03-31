@@ -168,7 +168,8 @@ FRDThunders {
 			r1 = Lag2.ar(K2A.ar(r1), 0.3);
 			t1 = Lag2.ar(K2A.ar(t1), 0.3);
 			dry1 = Lag2.ar(K2A.ar(dry1), 0.3);
-			sig =  (sig * 0.5) + LPF.ar(GVerb.ar(sig, r1, t1, 0.96, 0.1, 75, dry1, maxroomsize: 1000, mul: 0.5), 500);
+			//sig =  (sig * 0.5) + LPF.ar(GVerb.ar(sig, r1, t1, 0.96, 0.1, 75, dry1, maxroomsize: 1000, mul: 0.5), 500);
+			sig = (sig) + LPF.ar(CombC.ar(sig, 2, [0.12, 0.22, 0.31, 0.443, 0.6787, 0.731, 0.81, 0.996], 6).sum / 8, 1000);
 			sig = Limiter.ar(sig, 0.75 * amp);
 			Out.ar(out, sig);
 		}).writeDefFile;
