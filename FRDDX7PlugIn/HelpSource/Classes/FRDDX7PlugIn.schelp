@@ -1,11 +1,10 @@
-TITLE:: FRDReverbPlugIn
+TITLE:: FRDDX7PlugIn
 summary:: A custom stereo reverb synth with it's own GUI. Thought to be used for live electronics.
 categories:: FRD-PlugIns
-related:: FRDReverb
+related:: FRDDX7PlugIn
 
 DESCRIPTION::
-FRDReverbPlugIn is a language-side class that allows the musician to use a stereophonic FRDReverb-based Synth in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
-
+FRDDX7PlugIn is an emulation of Yamaha DX7 Mark-2 keyboard.
 
 
 CLASSMETHODS::
@@ -13,90 +12,61 @@ CLASSMETHODS::
 
 
 METHOD:: new
-Create a new FRDReverbPlugIn instance.
-ARGUMENT:: inCh
-Input channel.
-ARGUMENT:: outCh
-Output channel.
-ARGUMENT:: wet
-Dry/wet ratio, from 0.0 to 1.0.
-ARGUMENT:: feed
-The amount of feedback of the Feedback Delay Network, from 0.0 to 1.0. The higher the value, the longer the RT60.
-ARGUMENT:: clearness
-Reverb clearness, from -2.0 to 2.0. Values < 0 make wet signal darker, while values > 0 make wet signal brighter. 0 leaves the wet signal unaltered.
-ARGUMENT:: centerfreq
-Center frequency for clearness BHiShelf and BLowShelf filters.
-ARGUMENT:: width
-Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
-
-
-
-returns:: A FRDReverbPlugIn instance (stereo).
+Create a new FRDDX7PlugIn instance.
+returns:: A FRDDX7PlugIn instance.
 
 
 
 INSTANCEMETHODS::
 
-METHOD:: inCh
-Get/set the input channel index.
-ARGUMENT:: inCh
-Input channel index.
-returns:: Input channel index.
 
-METHOD:: outCh
-Get/set the output channel index.
+METHOD:: createRandomRelativePatch
+Create a random patch and play it.
+ARGUMENT:: numCarriers
+Number of carriers (1 to 5).
+ARGUMENT:: amp
+Amplitude of patch.
+ARGUMENT:: dur
+Duration of patch.
+ARGUMENT:: harmonic
+Whether the frequencies of the FM must be harmonic or not (true or false).
+ARGUMENT:: imod
+Range of index of modulation [lower, upper].
 ARGUMENT:: outCh
-Output channel index.
-returns:: Output channel index.
+Output channel.
+
+
+METHOD:: createRandomRelativePatchNRT
+Create a OSC score with a random patch and return it.
+ARGUMENT:: numCarriers
+Number of carriers (1 to 5).
+ARGUMENT:: amp
+Amplitude of patch.
+ARGUMENT:: dur
+Duration of patch.
+ARGUMENT:: harmonic
+Whether the frequencies of the FM must be harmonic or not (true or false).
+ARGUMENT:: imod
+Range of index of modulation [lower, upper].
+ARGUMENT:: outCh
+Output channel.
+ARGUMENT:: nrtTimeStamp
+Start time of the score.
+ARGUMENT:: startNode
+First node id to use.
+ARGUMENT:: startPrivateBus
+First private audio bus to use.
+returns:: OSC score.
+
+
+METHOD:: writeSynthDef
+Write internal synth definitions (to be run only once when installing this class!).
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-METHOD:: unroute
-Disconnect two processes.
-
-ARGUMENT:: fromProcess
-Process name whose output is unrouted.
-
-ARGUMENT:: toProcess
-Process name whose input is unrouted.
-
-ARGUMENT:: fadeTime
-Fade out time in seconds.
-
-returns:: A Router instance.
-
-
-
-METHOD:: addProcess
-Add a new process.
-
-ARGUMENT:: name
-Name of the process
-
-ARGUMENT:: inChannels
-Number of input channels.
-
-ARGUMENT:: outChannels
-Numbero of output channels.
-
-ARGUMENT:: chIN
-Input bus channel.
-
-ARGUMENT:: chOUT
-Output bus channel.
-
-returns:: A Router instance.
 
 
 
@@ -104,84 +74,46 @@ returns:: A Router instance.
 
 EXAMPLES::
 
-Basic usage:
+Real Time:
 
 code::
-
-(
-// Some test source
-SynthDef(\TestSignal, { | outCh=20 |
-	var sig, env, trig, freq;
-	trig = Impulse.kr(TRand.kr(0.5, 8, Impulse.kr(0.5)).round(0.25));
-	freq = TExpRand.kr(38, 99, trig).round(6).midicps;
-	env = EnvGen.ar(Env.perc(0.01, 0.21), trig, 1, 0.0, TExpRand.kr(0.75, 1.25, Impulse.kr(0.25)), doneAction: 0);
-	sig = SinOsc.ar(freq + SinOsc.ar(freq*env, 0, 0.5*freq*env*SinOsc.ar(0.1).abs.pow(4)), 0, env * 0.1 * AmpCompA.kr(freq));
-	sig = Pan2.ar(sig, Lag2.ar(TRand.ar(-0.63, 0.63, trig), 0.5));
-	Out.ar(outCh, sig);
-}).add;
-)
-
-(
-// White noise might be better for testing
-SynthDef(\TestSignal, { | outCh=20 |
-	var sig, env, trig, freq;
-	sig = WhiteNoise.ar(0.01) ! 2;
-	Out.ar(outCh, sig);
-}).add;
-)
-
-(
-// Run source
-x = Synth.head(s, \TestSignal);
-// Run reverb plug in
-r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addToTail', actionNode: 1);
-)
-
-// Show GUI
-r.showGUI();
-
-// Some scoping
-(
-s.meter;
-s.scope;
-s.freqscope;
-)
-
-// Change clearness
-r.clearness_(-2);
-r.clearness_(2);
-r.clearness_(0);
-r.clearness_(0.25);
-r.clearness_(-0.25);
-
-// Change centerfreq
-r.centerfreq_(20);
-r.centerfreq_(400);
-r.centerfreq_(2000);
-r.centerfreq_(20000);
-
-// Change wet
-r.wet_(0.0);
-r.wet_(0.2);
-r.wet_(0.4);
-r.wet_(0.6);
-r.wet_(0.8);
-r.wet_(1.0);
-
-// Change feed
-r.feed_(0.25);
-r.feed_(0.35);
-r.feed_(0.45);
-r.feed_(0.55);
-r.feed_(0.65);
-
-// Change width
-r.width_(0);
-r.width_(0.25);
-r.width_(0.5);
-r.width_(0.75);
-r.width_(1);
-
-
-
+f = FRDDX7PlugIn();
+f.createRandomRelativePatch(numCarriers: [1, 2, 3, 4].choose, freq: exprand(13, 1030), amp: rrand(0.25, 0.5), dur: rrand(2.0, 5), harmonic: [false, true].choose, imod: [0.07, rrand(0.15, 1.53)]);
 ::
+
+
+
+Non-Real Time:
+
+code::
+(
+f = FRDDX7PlugIn();
+c = [];
+7.do({ | id |
+	c = c ++ f.createRandomRelativePatchNRT(numCarriers: [1, 2, 3, 4].choose, freq: exprand(13, 1030), amp: rrand(0.25, 0.5), dur: rrand(2.0, 5), harmonic: [false, true].choose, imod: [0.07, rrand(0.15, 1.53)], outCh: 0, nrtTimeStamp: rrand(0.0, 7.0), startNode: 1002 + (id * 30), startPrivateBus: 40 + (id * 6));
+});
+c = c ++ [[12, [\c_set, 0, 0]]];
+o = ServerOptions.new.numOutputBusChannels = 2;
+Score.recordNRT(c, Platform.defaultTempDir +/+ "help-oscFile", Platform.defaultTempDir +/+ "DX7_NRT.aiff", options: o);
+)
+::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

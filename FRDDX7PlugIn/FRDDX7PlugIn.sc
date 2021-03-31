@@ -33,8 +33,7 @@ FRDDX7PlugIn {
 
 
 	// Create random module patch in relative mode
-	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0, nrtTimeStamp=nil |
-		if(nrtTimeStamp == nil, {
+	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0 |
 			Routine{
 				var modules, carriers, modulators, params, indexes, freqs, imods;
 				var patch, lastModulators;
@@ -81,7 +80,6 @@ FRDDX7PlugIn {
 				Server.local.sync;
 				busses.do({|bus| bus.free(clear: true)});
 			}.play;
-		});
 	}
 
 
