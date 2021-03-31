@@ -11,15 +11,15 @@ FRDExplosion {
 		hpf = 2500;
 		rate = 0.75;
 		amp = 0.8;
-		r1 = 270;
-		r2 = 170;
-		r3 = 290;
+		r1 = 70;
+		r2 = 10;
+		r3 = 90;
 		t1 = 15;
 		t2 = 10;
 		t3 = 20;
 
 		bus = Bus.audio(Server.default, 2);
-		reverb = Synth.tail(Server.default, \ExplosionRev, [\in, bus, \out, 0]);
+		reverb = Synth.tail(Server.default, \ExplosionRev, [\in, bus, \out, 0, \r1, r1, \r2, r2, \r3, r3, \t1, t1, \t2, t2, \t3, t3]);
 
 	}
 
@@ -89,7 +89,7 @@ FRDExplosion {
 	writeSynthDef {
 		SynthDef(\ExplosionSpike, { | amp=0.1, out=0 |
 			var sig = PinkNoise.ar(1) * LFNoise1.ar(250);
-			var env = EnvGen.ar(Env.perc(0.1 * (1.0 - amp), Rand(0.1, 0.5)));
+			var env = EnvGen.ar(Env.perc(0.001, Rand(0.1, 0.5)));
 			sig = HPF.ar(sig, 20);
 
 			sig = sig + Pan2.ar(CombC.ar(sig, 1.5, ExpRand(0.014, 1.0), Rand(0.2, 1.7), Rand(0.1, 0.25)), Rand(-0.5, 0.5));
@@ -105,12 +105,12 @@ FRDExplosion {
 		}).writeDefFile;
 		SynthDef(\ExplosionRev, { | amp=0.1, r1=370, r2=270, r3=470, t1=15, t2=10, t3=3, in=20, out=0 |
 			var sig = In.ar(in, 2);
-			r1 = Lag2.ar(K2A.ar(r1), 0.3);
-			r2 = Lag2.ar(K2A.ar(r2), 0.3);
-			r3 = Lag2.ar(K2A.ar(r3), 0.3);
-			t1 = Lag2.ar(K2A.ar(t1), 0.3);
-			t2 = Lag2.ar(K2A.ar(t2), 0.3);
-			t3 = Lag2.ar(K2A.ar(t3), 0.3);
+			r1 = Lag2.ar(K2A.ar(r1), 1);
+			r2 = Lag2.ar(K2A.ar(r2), 1);
+			r3 = Lag2.ar(K2A.ar(r3), 1);
+			t1 = Lag2.ar(K2A.ar(t1), 1);
+			t2 = Lag2.ar(K2A.ar(t2), 1);
+			t3 = Lag2.ar(K2A.ar(t3), 1);
 			sig = GVerb.ar(sig * 0.75, 10, 0.13);
 			sig =  GVerb.ar(sig, r1, t1, 0.2, 0.7, 75, 0.50, maxroomsize: 800, mul: 0.5) + GVerb.ar(sig, r2, t2, 0.7, 0.9, 50, 0.50, maxroomsize: 800, mul: 0.5);
 			sig = GVerb.ar(sig, r3, t3, 0.9, 0.2, 100, 0.30, maxroomsize: 800, mul: 0.8);
