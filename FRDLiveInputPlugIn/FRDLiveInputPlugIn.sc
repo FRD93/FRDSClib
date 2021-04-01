@@ -31,7 +31,7 @@ FRDLiveInputPlugIn {
 
 	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
 	asMixerMatrixProcess {
-		^Dictionary.new.put(\inCh, inCh_r).put(\outCh, outCh_r).put(\inChannels, 0).put(\outChannels, numChOut_r)
+		^Dictionary.new.put(\inCh, inCh_r).put(\outCh, outCh_r).put(\inChannels, numChOut_r).put(\outChannels, numChOut_r)
 	}
 
 
@@ -83,6 +83,7 @@ FRDLiveInputPlugIn {
 	synth {
 		^input
 	}
+
 
 
 	/*
