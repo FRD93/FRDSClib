@@ -5,99 +5,44 @@ related:: FRDDrone1PlugIn
 
 
 DESCRIPTION::
-FRDReverbPlugIn is a language-side class that allows the musician to use a stereophonic FRDReverb-based Synth in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
+Ugen for creating stereo drone sounds.
 
 
 
 CLASSMETHODS::
 
 
-
-METHOD:: new
+METHOD:: ar
 Create a new FRDReverbPlugIn instance.
-ARGUMENT:: inCh
-Input channel.
-ARGUMENT:: outCh
-Output channel.
-ARGUMENT:: wet
-Dry/wet ratio, from 0.0 to 1.0.
-ARGUMENT:: feed
-The amount of feedback of the Feedback Delay Network, from 0.0 to 1.0. The higher the value, the longer the RT60.
-ARGUMENT:: clearness
-Reverb clearness, from -2.0 to 2.0. Values < 0 make wet signal darker, while values > 0 make wet signal brighter. 0 leaves the wet signal unaltered.
-ARGUMENT:: centerfreq
-Center frequency for clearness BHiShelf and BLowShelf filters.
-ARGUMENT:: width
-Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
-
-
-
-returns:: A FRDReverbPlugIn instance (stereo).
+ARGUMENT:: freq
+Oscillator frequency.
+ARGUMENT:: lowpass
+Lowpass filter frequency.
+ARGUMENT:: amp
+Amplitude.
+ARGUMENT:: gate
+Gate of ADSR Envelope.
+ARGUMENT:: octA
+Amplitude of the octaver.
+ARGUMENT:: oct
+Octave of the octaver.
+ARGUMENT:: rmA
+Amplitude of the ring modulator.
+ARGUMENT:: flangerA
+Amplitude of the flanger effect.
+ARGUMENT:: vel
+Frequency of the flanger sweep.
+ARGUMENT:: max
+Max delay time of flanger.
+ARGUMENT:: explode
+Set to 1 to charge an explosion, then set to 0 to release the explosion.
+ARGUMENT:: lagTime
+Lag value for the overall controls.
+returns:: A FRDDrone1 instance.
 
 
 
 INSTANCEMETHODS::
-
-METHOD:: inCh
-Get/set the input channel index.
-ARGUMENT:: inCh
-Input channel index.
-returns:: Input channel index.
-
-METHOD:: outCh
-Get/set the output channel index.
-ARGUMENT:: outCh
-Output channel index.
-returns:: Output channel index.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-METHOD:: unroute
-Disconnect two processes.
-
-ARGUMENT:: fromProcess
-Process name whose output is unrouted.
-
-ARGUMENT:: toProcess
-Process name whose input is unrouted.
-
-ARGUMENT:: fadeTime
-Fade out time in seconds.
-
-returns:: A Router instance.
-
-
-
-METHOD:: addProcess
-Add a new process.
-
-ARGUMENT:: name
-Name of the process
-
-ARGUMENT:: inChannels
-Number of input channels.
-
-ARGUMENT:: outChannels
-Numbero of output channels.
-
-ARGUMENT:: chIN
-Input bus channel.
-
-ARGUMENT:: chOUT
-Output bus channel.
-
-returns:: A Router instance.
 
 
 
@@ -111,20 +56,20 @@ code::
 
 (
 // Example SynthDef
-SynthDef(\TestSignal, { | freq=55, lowpass=1200, amp=0.5, gate=0, octA=0, oct=1, rmA=0, flangerA=0, vel=0.4, max=0.01, explode=0, lagTime=1 |
+SynthDef(\Drone, { | freq=55, lowpass=1200, amp=0.5, gate=0, octA=0, oct=1, rmA=0, flangerA=0, vel=0.4, max=0.01, explode=0, lagTime=1 |
 	var sig = FRDDrone1.ar(freq, lowpass, amp, gate, octA, oct, rmA, flangerA, vel, max, explode, lagTime);
 	Out.ar(0, sig!2);
 }).add;
 )
 
 // Try it
-d = Synth(\TestSignal);
+d = Synth(\Drone);
 
 (
 // Try explosion
 Routine{
 	d.set(\explode, 1);
-	0.01.wait;
+	0.1.wait;
 	d.set(\explode, 0);
 }.play;
 )

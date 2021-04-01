@@ -1,5 +1,5 @@
 FRDDrone1 {
-	*ar {|freq=55, lowpass=1200, amp=0.5, gate=0, octA=0, oct=1, rmA=0, flangerA=0, vel=0.4, max=0.01,  explode=0/*, shosh=0*/, lagTime=1|
+	*ar {|freq=55, lowpass=1200, amp=0.5, gate=0, octA=0, oct=1, rmA=0, flangerA=0, vel=0.4, max=0.01,  explode=0, lagTime=1|
 		var sig, env, detune, out;
 		var in, ffreq, hasFreq, octaver, rm, flanger, feedback, delay, conv;
 		var lopToZero, lopToMax;
