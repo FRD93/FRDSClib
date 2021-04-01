@@ -11,7 +11,6 @@ Provide an user interface to route a mono or stereo phisical input to a bus.
 CLASSMETHODS::
 
 
- inGain, numChOut, addAction, actionNode |
 METHOD:: new
 Create a FRDLiveInputPlugIn instance.
 ARGUMENT:: inCh
@@ -79,7 +78,7 @@ WARNING:: Can cause feedback! Watch your ears. ::
 code::
 (
 i = FRDLiveInputPlugIn(inCh: 0, outCh: 20, inGain: 0, numChOut: 2, addAction: 'addToHead');
-r = FRDReverbPlugIn(20, 0, addAction: 'addAfter', actionNode: i.synth)
+r = FRDReverbPlugIn(20, 0, addAction: 'addAfter', actionNode: i.synth);
 )
 ::
 

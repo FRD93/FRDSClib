@@ -12,13 +12,13 @@ FRDMarkovChain {
 	init { | states, transitionMatrix, initialState |
 		path =  "".resolveRelative;
 		states_m = states;
-		this.acquireTransitionMatrix(transitionMatrix);
+		this.setTransitionMatrix(transitionMatrix);
 		this.impose(initialState);
 	}
 
 
 	// Normalize and save to transitionMatrix_m
-	acquireTransitionMatrix { | transitionMatrix |
+	setTransitionMatrix { | transitionMatrix |
 		transitionMatrix_m = transitionMatrix.flop.collect({|item| item.normalizeSum}).flop;
 		^transitionMatrix_m
 	}

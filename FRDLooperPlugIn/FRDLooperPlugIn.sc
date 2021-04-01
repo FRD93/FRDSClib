@@ -181,7 +181,7 @@ FRDLooperPlugIn {
 			feedback = feedback.clip(0.0, 1.0);
 			back = LocalIn.ar(2);
 			input = In.ar(inCh, 2) * inGain.dbamp;
-			delay = DelayC.ar((input * (1.0 - feedback)) + (back * feedback), 8, time - ControlDur.ir); // MAX 8 sec.
+			delay = DelayC.ar((input * (1.0 - feedback)) + (back * feedback), 16, time - ControlDur.ir); // MAX 16 sec.
 			LocalOut.ar([delay[1], delay[0]]);
 			Out.ar(outCh, delay * outGain.dbamp);
 	} ).writeDefFile.add;
