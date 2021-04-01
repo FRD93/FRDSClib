@@ -1,13 +1,16 @@
 TITLE:: FRDMixerMatrixPlugIn
-summary:: A matrix-like mixer with GUI. Thought to be used for live electronics.
+summary:: Matrix-like mixer for managing complex UGen graphs in real time for live electronics and workflow speedup.
 categories:: FRD-PlugIns
-related:: none
+
 
 DESCRIPTION::
-FRDMixerMatrixPlugIn is a language-side class that allows the musician to connect synths with a matrix-like GUI and to store and recall connections from preset files. It should be useful in live electronics scenarios.
+FRDMixerMatrixPlugIn is a language-side class that allows to connect nodes and FRD-PlugIns each other with a matrix-like user interface in real time. It also allows to store and recall preset files.
 
-
-
+WARNING::
+InFeedback class is used in the internal SynthDef to ensure the consistency of the node graph on the server: thus it adds a latency of (s.options.blockSize / s.options.sampleRate) seconds.
+::
+s.options.blockSize / s.options.sampleRate
+s.controlDur
 CLASSMETHODS::
 
 
@@ -21,28 +24,28 @@ returns:: A FRDMixerMatrixPlugIn instance.
 INSTANCEMETHODS::
 
 METHOD:: addProcess
-Add a process to the mixer from scratch.
+Add a node to the mixer from scratch.
 ARGUMENT:: name
-Process name (symbol or string).
+Process name (symbol or string, unique).
 ARGUMENT:: inChannels
 Number of input channels.
 ARGUMENT:: outChannels
 Number of output channels.
 ARGUMENT:: inCh
-Input channel index. If inChannels == 0, set this to nil.
+Input channel (If inChannels == 0, set this to nil).
 ARGUMENT:: outCh
-Output channel index.
+Output channel.
 
 
 
 
 
 METHOD:: addFRDProcess
-Add a FRD-PlugIn instance as process to the mixer.
+Add a FRD-PlugIn instance to the mixer.
 ARGUMENT:: name
-Process name (symbol or string).
+Process name (symbol or string, unique).
 ARGUMENT:: frdPlugIn
-A FRD-PlugIn instance.
+A valid FRD-PlugIn instance.
 
 
 
@@ -75,7 +78,7 @@ METHOD:: getProcess
 Get process information
 ARGUMENT:: name
 Process name.
-returns:: Dictionary containing process information.
+returns:: Dictionary containing process information (\inChannels, \outChannels, \inCh, \outCh).
 
 
 
@@ -118,13 +121,16 @@ returns:: Path
 
 
 METHOD:: readPreset
-Read and load a preset from file.
+Load a preset file located inside presetPath directory, routing/unrouting the connections accordingly with fade parameters.
 ARGUMENT:: name
-The name of the preset.
+ARGUMENT:: fadeIn
+ARGUMENT:: fadeOut
+Name of the preset.
 
 
 
 METHOD:: writePreset
+Write a preset file inside presetPath directory.
 ARGUMENT:: name
 The name of the preset.
 WARNING::
@@ -186,7 +192,7 @@ m.addFRDProcess("FRDReverb", r);
 // Try writing this scene to preset
 m.writePreset("tmp");
 
-// Try reloading preset after changing something
+// Change something in the patch, then reload the previous one by recalling the preset file
 m.readPreset("tmp", 1, 1);
 
 ::

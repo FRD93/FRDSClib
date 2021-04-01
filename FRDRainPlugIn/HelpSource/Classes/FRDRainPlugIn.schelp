@@ -1,4 +1,4 @@
-TITLE:: FRDPitchTrackRingModulatorPlugIn
+TITLE:: FRDRainPlugIn
 summary:: Ring modulator whose modulation frequency is tracked on the input signal.
 categories:: FRD-PlugIns
 
@@ -12,9 +12,7 @@ CLASSMETHODS::
 
 
 METHOD:: new
-Create a new FRDPitchTrackRingModulatorPlugIn instance.
-ARGUMENT:: inCh
-Input channel.
+Create a new FRDRainPlugIn instance.
 ARGUMENT:: outCh
 Output channel.
 ARGUMENT:: enabled
@@ -27,20 +25,14 @@ ARGUMENT:: addAction
 Add action for the synth (defaults to 'addToHead').
 ARGUMENT:: actionNode
 Node to connect the addAction to (if needed by the addAction argument, defaults to 1).
-returns:: A FRDPitchTrackRingModulatorPlugIn instance.
+returns:: A FRDRainPlugIn instance.
 
 
 INSTANCEMETHODS::
 
-METHOD:: inCh
-Get/set the input channel index.
-ARGUMENT:: inCh
-Input channel index.
-returns:: Input channel index.
 
 METHOD:: outCh
 Get/set the output channel index.
-ARGUMENT:: outCh
 Output channel index.
 returns:: Output channel index.
 

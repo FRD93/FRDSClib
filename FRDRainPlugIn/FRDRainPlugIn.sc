@@ -1,4 +1,5 @@
-FRDRain {
+FRDRainPlugIn {
+	var outCh_r
 	var win, hpnoise, white, brown, pink, gray, dust, drops;
 	var dustDensity=100, dropDensity=100, dropDecay=0.2, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=5000,
 	bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, amp=0.33;
@@ -6,11 +7,11 @@ FRDRain {
 	var hpnoise_s, white_s, brown_s, gray_s, pink_s, dust_s, drops_s, dropDensityDecay_s2, dropFreqRq_s2, bpFreqRq_s2, dropFFreq_s,
 	dropFRq_s, bpFreq_s, bpRq_s, bpWet_s, rWet_s, rateRedux_s, bits_s, amp_s, start_b;
 
-	*new {
-		^super.new.init();
+	*new { | outCh=0 |
+		^super.new.init(outCh);
 	}
 
-	init {
+	init { | outCh |
 
 
 		SynthDef(\Ambience, { | hpnoise=0, white=0, pink=0, brown=0, gray=0, dust=0, dustDensity=100,
@@ -23,6 +24,7 @@ FRDRain {
 			var redux;
 			var aenv = EnvGen.ar(Env.adsr(fade_in, releaseTime: fade_out, sustainLevel: 1, curve: [2, 0, -2]), gate);
 
+			outCh_r = outCh;
 			hpnoise = {HPF.ar(PinkNoise.ar(hpnoise.dbamp), hpNFreq)}!2;
 			white   = {WhiteNoise.ar(white.dbamp)}!2;
 			pink    = {PinkNoise.ar(pink.dbamp)}!2;
@@ -86,6 +88,28 @@ FRDRain {
 			Out.ar(out, sig);
 		}).add;
 	}
+
+
+
+	// outCh (output channel)
+	outCh {
+		^outCh_r
+	}
+	outCh_ { | outCh |
+		outCh_r = outCh;
+		reverb.set(\out, outCh_r);
+		^outCh_r
+	}
+
+	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
+	asMixerMatrixProcess {
+		^Dictionary.new.put(\inCh, nil).put(\outCh, outCh_r).put(\inChannels, 0).put(\outChannels, 2)
+	}
+
+
+
+
+
 	showGUI {
 		win = Window.new("Rain generator").onClose_({
 			reverb.free;
@@ -193,7 +217,7 @@ FRDRain {
 		start_b = Button().states_([["Play"], ["Stop"]]).action_({ | val |
 			if(val.value == 1, {
 				bus = Bus.audio(Server.default, 2);
-				reverb = Synth.tail(Server.default, \AmbienceRev, [\in, bus, \out, 0]);
+				reverb = Synth.tail(Server.default, \AmbienceRev, [\in, bus, \out, outCh_r]);
 				routine = Routine{
 					loop{
 						Synth.head(Server.default, \AmbienceGrain, [\hpnoise, hpnoise, \white, white, \pink, pink, \brown, brown, \gray, gray, \dust, dust, \dustDensity, dustDensity,
