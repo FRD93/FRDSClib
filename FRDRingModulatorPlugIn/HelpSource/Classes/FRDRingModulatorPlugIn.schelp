@@ -1,10 +1,10 @@
-TITLE:: FRDReverbPlugIn
-summary:: A custom stereo reverb synth with it's own GUI. Thought to be used for live electronics.
+TITLE:: FRDRingModulatorPlugIn
+summary:: Ring modulator on stereo input.
 categories:: FRD-PlugIns
-related:: FRDReverb
+related:: FRDPitchTrackRingModulatorPlugIn
 
 DESCRIPTION::
-FRDReverbPlugIn is a language-side class that allows the musician to use a stereophonic FRDReverb-based Synth in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
+FRDRingModulatorPlugIn is a language-side class that performs ring modulation on a stereo input bus.
 
 
 
@@ -13,25 +13,20 @@ CLASSMETHODS::
 
 
 METHOD:: new
-Create a new FRDReverbPlugIn instance.
+Create a new FRDRingModulatorPlugIn instance.
 ARGUMENT:: inCh
 Input channel.
 ARGUMENT:: outCh
 Output channel.
+ARGUMENT:: freq
+Modulating frequency.
 ARGUMENT:: wet
 Dry/wet ratio, from 0.0 to 1.0.
-ARGUMENT:: feed
-The amount of feedback of the Feedback Delay Network, from 0.0 to 1.0. The higher the value, the longer the RT60.
-ARGUMENT:: clearness
-Reverb clearness, from -2.0 to 2.0. Values < 0 make wet signal darker, while values > 0 make wet signal brighter. 0 leaves the wet signal unaltered.
-ARGUMENT:: centerfreq
-Center frequency for clearness BHiShelf and BLowShelf filters.
-ARGUMENT:: width
-Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
-
-
-
-returns:: A FRDReverbPlugIn instance (stereo).
+ARGUMENT:: addAction
+Add action for the synth (defaults to 'addToTail').
+ARGUMENT:: actionNode
+Node to connect the addAction to (if needed by the addAction argument, defaults to 1).
+returns:: A FRDRingModulatorPlugIn instance.
 
 
 
@@ -49,54 +44,31 @@ ARGUMENT:: outCh
 Output channel index.
 returns:: Output channel index.
 
+METHOD:: freq
+Get/set the modulating frequency.
+ARGUMENT:: freq
+Modulating frequency.
+returns:: Modulating frequency.
+
+METHOD:: wet
+Get/set the wet factor.
+ARGUMENT:: wet
+Wet factor.
+returns:: Wet factor.
+
+METHOD:: asMixerMatrixProcess
+Return a Dictionary for integration with FRDMixerMatrixPlugIn.
+
+METHOD:: showGUI
+Show the graphical user interface.
+
+METHOD:: writeSynthDef
+Write internal synth definitions (to be run only once when installing this class!).
 
 
 
 
 
-
-
-
-
-
-
-
-
-METHOD:: unroute
-Disconnect two processes.
-
-ARGUMENT:: fromProcess
-Process name whose output is unrouted.
-
-ARGUMENT:: toProcess
-Process name whose input is unrouted.
-
-ARGUMENT:: fadeTime
-Fade out time in seconds.
-
-returns:: A Router instance.
-
-
-
-METHOD:: addProcess
-Add a new process.
-
-ARGUMENT:: name
-Name of the process
-
-ARGUMENT:: inChannels
-Number of input channels.
-
-ARGUMENT:: outChannels
-Numbero of output channels.
-
-ARGUMENT:: chIN
-Input bus channel.
-
-ARGUMENT:: chOUT
-Output bus channel.
-
-returns:: A Router instance.
 
 
 
@@ -104,7 +76,6 @@ returns:: A Router instance.
 
 EXAMPLES::
 
-Basic usage:
 
 code::
 
@@ -121,66 +92,17 @@ SynthDef(\TestSignal, { | outCh=20 |
 }).add;
 )
 
-(
-// White noise might be better for testing
-SynthDef(\TestSignal, { | outCh=20 |
-	var sig, env, trig, freq;
-	sig = WhiteNoise.ar(0.01) ! 2;
-	Out.ar(outCh, sig);
-}).add;
-)
+
 
 (
 // Run source
 x = Synth.head(s, \TestSignal);
 // Run reverb plug in
-r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addToTail', actionNode: 1);
+r = FRDRingModulatorPlugIn(inCh: 20, outCh: 0, freq: 140, wet: 0.4, addAction: 'addAfter', actionNode: x);
 )
 
 // Show GUI
 r.showGUI();
-
-// Some scoping
-(
-s.meter;
-s.scope;
-s.freqscope;
-)
-
-// Change clearness
-r.clearness_(-2);
-r.clearness_(2);
-r.clearness_(0);
-r.clearness_(0.25);
-r.clearness_(-0.25);
-
-// Change centerfreq
-r.centerfreq_(20);
-r.centerfreq_(400);
-r.centerfreq_(2000);
-r.centerfreq_(20000);
-
-// Change wet
-r.wet_(0.0);
-r.wet_(0.2);
-r.wet_(0.4);
-r.wet_(0.6);
-r.wet_(0.8);
-r.wet_(1.0);
-
-// Change feed
-r.feed_(0.25);
-r.feed_(0.35);
-r.feed_(0.45);
-r.feed_(0.55);
-r.feed_(0.65);
-
-// Change width
-r.width_(0);
-r.width_(0.25);
-r.width_(0.5);
-r.width_(0.75);
-r.width_(1);
 
 
 

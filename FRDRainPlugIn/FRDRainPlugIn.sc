@@ -1,5 +1,5 @@
 FRDRainPlugIn {
-	var outCh_r
+	var outCh_r;
 	var win, hpnoise, white, brown, pink, gray, dust, drops;
 	var dustDensity=100, dropDensity=100, dropDecay=0.2, dropFFreq=100, dropFRq=1, bpWet=0.5, bpFreq=5000,
 	bpRq=1, rWet=0.5, rateRedux=0.5, bits=16, amp=0.33;
@@ -90,7 +90,6 @@ FRDRainPlugIn {
 	}
 
 
-
 	// outCh (output channel)
 	outCh {
 		^outCh_r
@@ -99,6 +98,11 @@ FRDRainPlugIn {
 		outCh_r = outCh;
 		reverb.set(\out, outCh_r);
 		^outCh_r
+	}
+
+	// get synth
+	synth {
+		^reverb
 	}
 
 	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
@@ -208,11 +212,11 @@ FRDRainPlugIn {
 			})
 		}).value_(Map(bits, 1, 32, 0.0, 1.0));
 		amp_s = Slider().action_({ | val |
-			amp = val.value;
+			amp = Map(val.value, 0.0, 1.0, 0.0, 3.0);
 			if(synth != nil, {
 				synth.set(\amp, amp);
 			});
-		}).value_(amp);
+		}).value_(Map(amp, 0.0, 3.0, 0.0, 1.0));
 
 		start_b = Button().states_([["Play"], ["Stop"]]).action_({ | val |
 			if(val.value == 1, {

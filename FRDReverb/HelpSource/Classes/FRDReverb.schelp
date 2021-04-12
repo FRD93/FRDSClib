@@ -1,0 +1,79 @@
+TITLE:: FRDReverb
+summary:: A custom stereo reverb synth with it's own GUI. Thought to be used for live electronics.
+categories:: FRD-PlugIns
+related:: FRDReverbPlugIn
+
+DESCRIPTION::
+Reverb UGen (Stereo).
+
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: ar
+Create a new FRDReverb instance.
+ARGUMENT:: fl
+Left channel.
+ARGUMENT:: fr
+Right channel.
+ARGUMENT:: feed
+The amount of feedback of the Feedback Delay Network, from 0.0 to 1.0. The higher the value, the longer the RT60.
+ARGUMENT:: width
+Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
+ARGUMENT:: lowshelff
+Frequency of the low shelf filter (5Hz to 20kHz).
+ARGUMENT:: lowshelfg
+Gain of the low shelf filter (-60dB to +20dB).
+ARGUMENT:: hishelff
+Frequency of the hi shelf filter (5Hz to 20kHz).
+ARGUMENT:: hishelfg
+Gain of the hi shelf filter (-60dB to +20dB).
+ARGUMENT:: hpf
+Output high pass filter frequency (5Hz to 20kHz).
+ARGUMENT:: lpf
+Output low pass filter frequency (5Hz to 20kHz).
+ARGUMENT:: wet
+Dry/wet ratio, from 0.0 to 1.0.
+returns:: A FRDReverb UGen.
+
+
+
+EXAMPLES::
+
+
+
+code::
+
+// Read a test source
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+// Create a SynthDef
+(
+SynthDef(\Rev, {|feed=0.5, width=0.5, lowshelff=160, lowshelfg=0, hishelff=2656, hishelfg=0, hpf=5, lpf=20000, wet=0.5, amp=1|
+	var sigA, rev;
+	sigA = PlayBuf.ar(1, b, 1, loop: 1) * 0.25;
+	sigA = Pan2.ar(sigA, SinOsc.ar(0.4, 0, 1));
+	rev = FRDReverb.ar(sigA[0], sigA[1], feed, width, lowshelff, lowshelfg, hishelff, hishelfg, hpf, lpf, wet);
+	Out.ar(0, rev * amp);
+}).add;
+)
+
+// Run the Synth and set the values
+(
+a = Synth(\Rev, [\feed, 0.5, \width, 0.5, \wet, 0.75, \amp, 2]);
+a.set(\feed, 0.25);
+a.set(\width, 0.6);
+a.set(\hishelff, 2656);
+a.set(\hishelfg, -8);
+a.set(\lowshelff, 360);
+a.set(\lowshelfg, 6);
+a.set(\hpf, 5);
+a.set(\lpf, 15000);
+a.set(\wet, 0.38);
+a.set(\amp, 2);
+)
+
+
+::

@@ -1,0 +1,100 @@
+TITLE:: FRDThunders
+summary:: FRDThunders is a thunder-like sound synthesizer.
+categories:: FRD-PlugIns
+related:: FRDRainPlugIn
+
+DESCRIPTION::
+Thunder-like sound synthesizer.
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Create a new FRDThunders instance.
+returns:: A FRDThunders instance.
+
+
+
+INSTANCEMETHODS::
+
+
+METHOD:: hpf
+Get/set high-pass filter.
+ARGUMENT:: hpf
+METHOD:: rate
+Get/set rate of play.
+ARGUMENT:: rate
+METHOD:: amp
+Get/set amplitude.
+ARGUMENT:: amp
+METHOD:: outCh
+Get/set output channel.
+ARGUMENT:: outCh
+METHOD:: play
+Play in random mode.
+METHOD:: stop
+Stop random mode.
+METHOD:: trigger
+Trigger a single thunder.
+METHOD:: showGUI
+Show graphical user interface.
+METHOD:: asMixerMatrixProcess
+Return a dictionary for integration with FRDMixerMatrixPlugIn
+METHOD:: writeSynthDef
+Write internal synth definitions (to be run only once when installing this class!).
+
+
+
+
+
+
+
+
+
+
+
+EXAMPLES::
+
+code::
+// Init
+t = FRDThunders();
+// Show GUI
+t.showGUI();
+// Set hpf
+t.hpf_(14905);
+// Set rate
+t.rate_(0.2);
+// Trigger single thunder
+t.trigger();
+// Play random mode
+t.play();
+// Stop random mode
+t.stop();
+// Stop DSP manually
+t.freeDSP();
+::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

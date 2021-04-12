@@ -14,9 +14,9 @@ FRDSFGranulator {
 
 		name_sfg = name;
 
-		SynthDef(\Grano, { | buf=0, dur=1, amp=0.7, rate=1, atk=0.5, pos=0, pan=0, outCh=0 |
+		SynthDef(\FRDSFGranulatorGrain, { | buf=0, dur=1, amp=0.7, rate=1, atk=0.5, pos=0, pan=0, outCh=0 |
 			var play = PlayBuf.ar(1, buf, rate, 1, pos, 0, 0);
-			var env = EnvGen.ar(Env.new([0, 1, 0], [0.5, 0.5], 'wel'), 1, 1, 0, dur, 2);
+			var env = EnvGen.ar(Env.new([0, 1, 0], [atk, 1.0 - atk], 'wel'), 1, 1, 0, dur, 2);
 			play = Pan2.ar(play, pan);
 			Out.ar(outCh, play*env*amp);
 		}).add;
@@ -30,7 +30,7 @@ FRDSFGranulator {
 		sf = SoundFile.new;
 		sf.openRead(sf_path);
 		if( parent==nil, {
-			win = Window.new(name, Rect(200, 290, 300, 80)).onClose_({sndrout.stop; ctrlrout.stop;~drums.stop;});
+			win = Window.new(name, Rect(200, 290, 300, 80)).onClose_({sndrout.stop; ctrlrout.stop;});
 		}, {
 			win = parent;
 		} );
@@ -97,7 +97,7 @@ FRDSFGranulator {
 					var type=0;
 					var which=0;
 					Synth(\ReplyBang);
-					Synth(\Grano, [\buf, buf, \dur, duration, \amp, amp, \rate, rate, \atk, atk, \pos, pos, \pan, pan, \outCh, outCh]);
+					Synth(\FRDSFGranulatorGrain, [\buf, buf, \dur, duration, \amp, amp, \rate, rate, \atk, atk, \pos, pos, \pan, pan, \outCh, outCh]);
 					// VIDEO SYNC
 					if(rate >= 2, {which = 0}, {which = 1});
 					if(pos >= (buf.numFrames * 2 / 3), {type=1;});
@@ -174,12 +174,14 @@ FRDSFGranulator {
 
 
 	asProcessA {
-
 		// ^[ NAME , N_IN_CH , N_OUT_CH , CH_IN , CH_OUT ]
 		^[name_sfg.asSymbol, nil, 2, nil, outCh];
-
 	}
 
+	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
+	asMixerMatrixProcess {
+		^Dictionary.new.put(\inCh, nil).put(\outCh, outCh).put(\inChannels, 0).put(\outChannels, 2)
+	}
 
 	showGUI {
 		win.front;
@@ -189,8 +191,8 @@ FRDSFGranulator {
 		sfv.setSelection(selectionNumber, [selectionStart, selectionLength]);
 	}
 
-	removeSelection { | selectinoNumber |
-		sfv.setSelection(selectinoNumber, [0, 0]);
+	removeSelection { | selectionNumber |
+		sfv.setSelection(selectionNumber, [0, 0]);
 	}
 
 	rate_ { | minRateRange, maxRateRange=0 |
@@ -313,6 +315,9 @@ FRDSFGranulator {
 		}.reset.play( AppClock );
 	}
 
+	stopRandSeedLoop {
+		ctrlseedrout.stop();
+	}
 
 
 

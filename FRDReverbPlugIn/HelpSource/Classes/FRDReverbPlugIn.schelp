@@ -4,7 +4,7 @@ categories:: FRD-PlugIns
 related:: FRDReverb
 
 DESCRIPTION::
-FRDReverbPlugIn is a language-side class that allows the musician to use a stereophonic FRDReverb-based Synth in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
+FRDReverbPlugIn is a language-side class that implements FRDReverb UGen in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
 
 
 
@@ -28,9 +28,10 @@ ARGUMENT:: centerfreq
 Center frequency for clearness BHiShelf and BLowShelf filters.
 ARGUMENT:: width
 Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
-
-
-
+ARGUMENT:: addAction
+Add action for the synth (defaults to 'addToTail').
+ARGUMENT:: actionNode
+Node to connect the addAction to (if needed by the addAction argument, defaults to 1).
 returns:: A FRDReverbPlugIn instance (stereo).
 
 
@@ -49,54 +50,54 @@ ARGUMENT:: outCh
 Output channel index.
 returns:: Output channel index.
 
+METHOD:: centerfreq
+Get/set the frequency of hi/low shelf filters.
+ARGUMENT:: centerfreq
+Center frequency.
+returns:: Center frequency.
+
+METHOD:: clearness
+Get/set the clearness of the reverb (>0 increments frequencies above centerfreq, <0 increments frequencies below centerfreq).
+ARGUMENT:: clearness
+Clearness value.
+returns:: Clearness value.
+
+METHOD:: feed
+Get/set the feedback factor.
+ARGUMENT:: feed
+Feedback factor.
+returns:: Feedback factor.
+
+METHOD:: synth
+Get the synth instance.
+returns:: Synth instance.
+
+METHOD:: wet
+Get/set the wet factor.
+ARGUMENT:: wet
+Wet factor.
+returns:: Wet factor.
+
+METHOD:: width
+Get/set the stereophonic width.
+ARGUMENT:: width
+Stereo width.
+returns:: Stereo width.
+
+METHOD:: asMixerMatrixProcess
+Return a Dictionary for integration with FRDMixerMatrixPlugIn.
+
+METHOD:: showGUI
+Show the graphical user interface.
+
+METHOD:: writeSynthDef
+Write internal synth definitions (to be run only once when installing this class!).
 
 
 
 
 
 
-
-
-
-
-
-
-
-METHOD:: unroute
-Disconnect two processes.
-
-ARGUMENT:: fromProcess
-Process name whose output is unrouted.
-
-ARGUMENT:: toProcess
-Process name whose input is unrouted.
-
-ARGUMENT:: fadeTime
-Fade out time in seconds.
-
-returns:: A Router instance.
-
-
-
-METHOD:: addProcess
-Add a new process.
-
-ARGUMENT:: name
-Name of the process
-
-ARGUMENT:: inChannels
-Number of input channels.
-
-ARGUMENT:: outChannels
-Numbero of output channels.
-
-ARGUMENT:: chIN
-Input bus channel.
-
-ARGUMENT:: chOUT
-Output bus channel.
-
-returns:: A Router instance.
 
 
 
@@ -134,7 +135,7 @@ SynthDef(\TestSignal, { | outCh=20 |
 // Run source
 x = Synth.head(s, \TestSignal);
 // Run reverb plug in
-r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addToTail', actionNode: 1);
+r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addAfter', actionNode: x);
 )
 
 // Show GUI

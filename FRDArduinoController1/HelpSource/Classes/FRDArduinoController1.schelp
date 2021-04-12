@@ -1,0 +1,106 @@
+TITLE:: FRDArduinoController1
+summary:: Class for connecting to AudioVideoLab's 4-knob controller
+categories:: FRD-PlugIns
+
+
+DESCRIPTION::
+
+Class for connecting to AudioVideoLab's 4-fader controller.
+Mappable keywords are:
+"e0" -> knob 1
+"e1" -> knob 2
+"e2" -> knob 3
+"e3" -> knob 4
+"b0" -> button 1
+"b1" -> button 2
+"b2" -> button 3
+"b3" -> button 4
+
+
+CLASSMETHODS::
+
+
+METHOD:: new
+Create a new FRDArduinoController1 instance.
+
+
+
+INSTANCEMETHODS::
+
+METHOD:: connect
+Connect the instance to a phisically connected controller
+ARGUMENT:: addr
+Serial port valid address
+ARGUMENT:: baud
+Baud rate of the transmission
+
+
+METHOD:: bind
+Bind a function to a mappable keyword.
+ARGUMENT:: key
+Controller's keyword
+ARGUMENT:: obj
+Instance whose method has to be executed
+ARGUMENT:: func
+Method to be evaluated on instance. For buttons, it can be an array with two methods which will be evaluated according to the button state.
+ARGUMENT:: val
+Value to be passed to method
+ARGUMENT:: step
+Increment step (only for encoders)
+
+
+
+EXAMPLES::
+
+
+code::
+
+// Connect the controller via USB, then change addr accordingly
+SerialPort.devices;
+p = FRDArduinoController1(addr: "/dev/cu.wchusbserial1410", baud: 9600);
+
+// Example class to bind
+(
+d = FRDThunders();
+d.showGUI;
+)
+
+// Bind methods of the instance to buttons of the controller
+(
+p.bind("b0", d, [\play, \stop]);
+p.bind("b1", d, \trigger);
+)
+
+// Bind methods of the instance to encoders of the controller
+(
+p.bind("e0", d, \hpf_, d.hpf, 1000);
+p.bind("e1", d, \rate_, d.rate, 0.05);
+p.bind("e2", d, \amp_, d.amp, 0.05);
+)
+// Disconnect the controller
+p.disconnect;
+
+::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

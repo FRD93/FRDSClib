@@ -1,0 +1,288 @@
+TITLE:: FRDSFGranulator
+summary:: SoundFile granulator with GUI.
+categories:: FRD-PlugIns
+
+DESCRIPTION::
+FRDSFGranulator is a musical soundfile granulator with GUI.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+Create a new FRDSFGranulator instance.
+
+ARGUMENT:: name
+Name of the instance (for referencing).
+
+ARGUMENT:: sf_path
+Soundfile path
+
+ARGUMENT:: video_addr
+Port number for communicating with Processing language via OSC (localhost only).
+
+ARGUMENT:: parent
+Parent Window (if needed)
+
+returns:: A FRDSFGranulator instance.
+
+
+INSTANCEMETHODS::
+
+METHOD:: lineTo
+Create an envelop to smooth the change of a specified parameter from a value to another in some time.
+
+ARGUMENT:: param
+Parameter to change
+
+ARGUMENT:: from
+Value from
+
+ARGUMENT:: to
+Value to
+
+ARGUMENT:: time
+Envelope time
+
+ARGUMENT:: round
+> 0 for stepping the envelope
+
+ARGUMENT:: power
+Change the curve type (1=linear)
+
+
+METHOD:: minGrainsPerSecond
+Minimum grains per second
+
+ARGUMENT:: newMinGPS
+Grains per second
+
+returns:: Minimum grains per second
+
+METHOD:: maxGrainsPerSecond
+Maximum grains per second
+
+ARGUMENT:: newMaxGPS
+Grains per second
+
+returns:: Maximum grains per second
+
+METHOD:: ctrlDelta
+Ctrl routine time delta for parameters update
+
+ARGUMENT:: newCTRLDelta
+New time value
+
+returns:: Ctrl routine time delta
+
+METHOD:: durScale
+Multiplier of grain duration for Syncronous Granular Synthesis
+
+ARGUMENT:: newDurScale
+New value
+
+returns:: Multiplier of grain duration for Syncronous Granular Synthesis
+
+
+METHOD:: removeSelection
+Remove a selection
+
+ARGUMENT:: selectionNumber
+Selection number
+
+METHOD:: stop
+Stop the granulator
+
+
+
+METHOD:: asMixerMatrixProcess
+Return a Dictionary for integration with FRDMixerMatrixPlugIn.
+
+
+
+METHOD:: showGUI
+Show graphical user interface.
+
+METHOD:: sfFrames
+Number of frames in loaded soundfile
+
+returns:: Soundfile frames
+
+
+METHOD:: addSelection
+Add a selection
+
+ARGUMENT:: selectionNumber
+Number of the selection
+
+ARGUMENT:: selectionStart
+Start frame of the selection
+
+ARGUMENT:: selectionLength
+Length of selection in frames
+
+
+
+
+METHOD:: atk
+Attack % of the grains
+
+ARGUMENT:: newAtk
+Attack value (0.0 to 1.0)
+
+returns:: Attack % of the grains
+
+METHOD:: start
+Start the granulator
+
+ARGUMENT:: clock
+TempoClock instance
+
+ARGUMENT:: quant
+Quant
+
+
+METHOD:: amp
+Get/set the amplitude of the grains
+
+ARGUMENT:: newAmp
+Amplitude
+
+returns:: Amplitude of the grains
+
+METHOD:: ctrlRandSeedLoop
+Set the random seed for the ctrl routine ciclically inside a loop.
+
+ARGUMENT:: seed
+Random seed
+
+ARGUMENT:: speed
+Random seed reset time delta
+
+
+
+METHOD:: rate
+Rate of the buffer play
+
+ARGUMENT:: minRateRange
+Minimum rate value
+
+ARGUMENT:: maxRateRange
+Maximum rate value
+
+
+
+METHOD:: ctrlRandSeed
+Set the random seed for the ctrl routine
+
+ARGUMENT:: seed
+Random seed
+
+
+
+METHOD:: pan
+Get/set the pan of the grains
+
+ARGUMENT:: newPan
+Pan value
+
+returns:: Pan value
+
+METHOD:: ctrlRandSpeed
+Set the reset time delta for the random seed loop of the ctrl parameters
+
+ARGUMENT:: speed
+Random seed reset time delta
+
+METHOD:: stopRandSeedLoop
+Stop the random seed loop of the ctrl parameters
+
+
+METHOD:: outCh
+Get/set the output channel
+
+ARGUMENT:: ch
+New output channel
+
+returns:: Output channel
+
+
+EXAMPLES::
+
+code::
+// Create a new instance of SFGranulator
+g = FRDSFGranulator("SFG1", Platform.resourceDir +/+ "sounds/a11wlk01.wav", 57200, nil);
+// Show GUI
+g.showGUI;
+// Add some selections (or do it with the GUI)
+g.addSelection(0, 470, 7812);
+g.addSelection(1, 64470, 10712);
+g.addSelection(2, 113470, 17812);
+
+// Remove selections (or do it with the GUI)
+g.removeSelection(2);
+g.removeSelection(1);
+g.removeSelection(0);
+
+// Set some parameters
+(
+g.amp_(0.5);
+g.rate_(0.4, 0.6);
+g.minGrainsPerSecond_(4);
+g.maxGrainsPerSecond_(64);
+)
+
+// Start the granulator
+g.start;
+
+// Change some parameters instantly
+(
+g.amp_(0.75);
+g.rate_(0.84, 0.86);
+g.minGrainsPerSecond_(64);
+g.maxGrainsPerSecond_(256);
+g.durScale_(3);
+g.ctrlDelta_(0.125);
+)
+
+// Loop ctrl routine
+g.ctrlRandSeedLoop_(682453, 2);
+
+// Change ctrl loop
+g.ctrlRandSeedLoop_(2453, 4);
+g.ctrlRandSeedLoop_(42521, 4);
+g.ctrlRandSeedLoop_(786543, 4);
+g.ctrlRandSeedLoop_(687452, 4);
+
+// Stop ctrl loop
+g.stopRandSeedLoop;
+
+// Change some parameters with envelopes
+g.lineTo("amp", 0.75, 0.25, 3, 0, 2);
+g.lineTo("amp", 0.25, 0.5, 3, 0, 2);
+g.lineTo("rate", 0.5, 1.5, 8, 0, 2);
+g.lineTo("rate", 2, 0.5, 1, 0, 2);
+(
+g.lineTo("minGrainsPerSecond", g.maxGrainsPerSecond, 4, 8, 0, 1);
+g.lineTo("maxGrainsPerSecond", g.minGrainsPerSecond, 128, 8, 0, 1);
+)
+g.lineTo("durScale", 3, 0.5, 8, 0, 1);
+
+// Stop the granulator
+g.stop;
+::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

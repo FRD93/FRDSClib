@@ -22,76 +22,55 @@ INSTANCEMETHODS::
 
 
 METHOD:: freq
-Get frequency value.
+Get/set frequency.
+ARGUMENT:: freq
 
-METHOD:: freq_
-Set frequency value.
 
 METHOD:: lowpass
-Get lowpass frequency value.
-
-METHOD:: lowpass_
-Set lowpass frequency value.
+Get/set lowpass frequency.
+ARGUMENT:: lowpass
 
 METHOD:: amp
-Get amplitude value.
+Get/set amplitude.
+ARGUMENT:: amp
 
-METHOD:: amp_
-Set amplitude value.
 
 METHOD:: gate
-Get gate value.
+Get/set gate.
+ARGUMENT:: gate
 
-METHOD:: gate_
-Set gate value.
 
 METHOD:: octA
-Get octaver amplitude value.
-
-METHOD:: octA_
-Set octaver amplitude value.
+Get/set octaver amplitude.
+ARGUMENT:: octA
 
 METHOD:: oct
-Get octaver octave value.
-
-METHOD:: oct_
-Set octaver octave value.
+Get/set octaver octave.
+ARGUMENT:: oct
 
 METHOD:: rmA
-Get ring modulation amplitude value.
-
-METHOD:: rmA_
-Set ring modulation amplitude value.
+Get/set ring modulation amplitude.
+ARGUMENT:: rmA
 
 METHOD:: flangerA
-Get flanger amplitude value.
-
-METHOD:: flangerA_
-Set flanger amplitude value.
+Get/set flanger amplitude.
+ARGUMENT:: flangerA
 
 METHOD:: vel
-Get flanger sweep frequency value.
-
-METHOD:: vel_
-Set flanger sweep frequency value.
+Get/set flanger sweep frequency.
+ARGUMENT:: vel
 
 METHOD:: max
-Get flanger max delay time value.
-
-METHOD:: max_
-Set flanger max delay time value.
+Get/set flanger max delay time.
+ARGUMENT:: max
 
 METHOD:: lagTime
-Get lag time value.
-
-METHOD:: lagTime_
-Set lag time value.
+Get/set lag time.
+ARGUMENT:: lagTime
 
 METHOD:: outCh
-Get out channel.
-
-METHOD:: outCh_
-Set out channel.
+Get/set out channel.
+ARGUMENT:: outCh
 
 METHOD:: explode
 Trigger explosion.

@@ -1,0 +1,50 @@
+TITLE:: FRDSequencer
+summary:: Graphic Sequencer.
+categories:: FRD-PlugIns
+
+
+DESCRIPTION::
+FRDSequencer is a sequencer with GUI for triggering Synths with parameters. It can also read and write preset files.
+
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Create a new FRDSequencer instance.
+returns:: A FRDSequencer instance.
+
+
+
+INSTANCEMETHODS::
+
+METHOD:: showGUI
+Show the graphical user interface.
+
+
+
+
+
+
+
+
+
+
+
+EXAMPLES::
+
+
+code::
+
+
+// Init
+f = FRDSequencer();
+// Show GUI
+f.showGUI();
+// Create a pattern or load it, then show patterns
+f.patterns;
+// Play a pattern
+f.playPattern(f.patterns[0], SystemClock, [1, 0, 0])
+::

@@ -190,6 +190,10 @@ FRDDrone1PlugIn {
 		^Dictionary.new.put(\inCh, nil).put(\outCh, outCh_d).put(\inChannels, 0).put(\outChannels, 1)
 	}
 
+	// get synth
+	synth {
+		^drone
+	}
 
 
 

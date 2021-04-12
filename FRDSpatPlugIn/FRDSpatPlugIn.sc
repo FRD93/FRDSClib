@@ -4,10 +4,19 @@ N-Ch Spatializer
 Copyright ©2018, Francesco Roberto Dani
 */
 
+/*
+TODO:
+1) Aggiungere metodi per inserimento/rimozione delle sorgenti (dict[\S])
+2) Implementare la scelta del tipo tracciato [\wrap, \fold e \spot] delle singole sorgenti
+3) Implementare la scelta del numero di diffusori (dict[\L]) e della grandezza della sala (dict[\H])
+4) Implementare nella GUI la lista delle sorgenti, con possibilità di inserimento, modifica e rimozione delle stesse
+4) Implementare DSP, processi audio (dict[\P]) e metodo .synth()
+*/
+
 FRDSpatPlugIn {
 
 	// System variables
-	var dict, refresh_rout, presetPath_s, temp, window;
+	var dict, refresh_rout, presetPath_s, temp, window, outCh_d;
 	var window, drawView, width, height;
 
 	*new { | inCh=2, outCh=0, numCh=2 |
@@ -23,10 +32,11 @@ FRDSpatPlugIn {
 		var sourcetrack;
 		var update;
 
+		outCh_d = outCh;
+
 		dict=Dictionary.new;
 		dict.put(\H,[24,45]); //dimensioni sala in metri
-		dict.put(\L,[[2.5,2.5],[21.5,2.5],[1,14.5],[23,14.5],[1,30.5],[23,30.5],[2.5,40.5],[21.5,40.5]]);
-		//coordinate in metri dei diffusori con origine in alto a sinistra
+		dict.put(\L,[[2.5,2.5],[21.5,2.5],[1,14.5],[23,14.5],[1,30.5],[23,30.5],[2.5,40.5],[21.5,40.5]]); //coordinate in metri dei diffusori con origine in alto a sinistra
 		dict.put(\S,[[5, 3, \First, \wrap],[12, 4, \Second, \fold]]); // coordinate in metri delle sorgenti
 		dict.put(\P,[[1000,1001],[1003]]); // processi audio
 		dict.put(\T,Dictionary.new); // lista delle traiettorie
@@ -152,6 +162,13 @@ FRDSpatPlugIn {
 		}.play(AppClock);
 	}
 
+	addSource { | x=0, y=0, name="", type=\fold |
+		dict[\S] = dict[\S].add([x, y, name, type]);
+	}
+
+	removeSource { | index |
+		dict[\S].removeAt(index);
+	}
 
 	refreshGUI {
 		refresh_rout = Routine{
@@ -172,7 +189,17 @@ FRDSpatPlugIn {
 	}
 
 
+	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
+	asMixerMatrixProcess {
+		^Dictionary.new.put(\inCh, nil).put(\outCh, outCh_d).put(\inChannels, 0).put(\outChannels, 1)
+	}
 
+	/*
+	// get synth
+	synth {
+		^drone
+	}
+	*/
 
 
 

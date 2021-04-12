@@ -149,7 +149,7 @@ FRDReverbPlugIn {
 	}
 
 	// reverb synth
-	reverb {
+	synth {
 		^reverb
 	}
 

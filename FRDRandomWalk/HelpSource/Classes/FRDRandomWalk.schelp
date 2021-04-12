@@ -1,10 +1,10 @@
-TITLE:: FRDReverbPlugIn
-summary:: A custom stereo reverb synth with it's own GUI. Thought to be used for live electronics.
+TITLE:: FRDRandomWalk
+summary:: Generate random numbers with memory of past generations.
 categories:: FRD-PlugIns
 related:: FRDReverb
 
 DESCRIPTION::
-FRDReverbPlugIn is a language-side class that allows the musician to use a stereophonic FRDReverb-based Synth in a plug-and-play manner, with it's own GUI and presets. It should be useful in live electronics scenarios.
+Generate random numbers with memory of past generations, to simulate a random walk algorithm.
 
 
 
@@ -13,43 +13,62 @@ CLASSMETHODS::
 
 
 METHOD:: new
-Create a new FRDReverbPlugIn instance.
-ARGUMENT:: inCh
-Input channel.
-ARGUMENT:: outCh
-Output channel.
-ARGUMENT:: wet
-Dry/wet ratio, from 0.0 to 1.0.
-ARGUMENT:: feed
-The amount of feedback of the Feedback Delay Network, from 0.0 to 1.0. The higher the value, the longer the RT60.
-ARGUMENT:: clearness
-Reverb clearness, from -2.0 to 2.0. Values < 0 make wet signal darker, while values > 0 make wet signal brighter. 0 leaves the wet signal unaltered.
-ARGUMENT:: centerfreq
-Center frequency for clearness BHiShelf and BLowShelf filters.
-ARGUMENT:: width
-Stereo width of the wet signal, from 0.0 to 1.0. The higher the value, the more the reflections are channel-independent.
-
-
-
-returns:: A FRDReverbPlugIn instance (stereo).
+Create a new FRDRandomWalk instance.
+ARGUMENT:: min
+Minimum value
+ARGUMENT:: max
+Maximum value
+ARGUMENT:: step
+Step value
+ARGUMENT:: initialState
+First value of the walk
+returns:: A FRDRandomWalk instance.
 
 
 
 INSTANCEMETHODS::
 
-METHOD:: inCh
-Get/set the input channel index.
-ARGUMENT:: inCh
-Input channel index.
-returns:: Input channel index.
+METHOD:: min
+Get/set the minimum value.
+ARGUMENT:: min
+Minimum value
+returns:: Minimum value
 
-METHOD:: outCh
-Get/set the output channel index.
-ARGUMENT:: outCh
-Output channel index.
-returns:: Output channel index.
+METHOD:: max
+Get/set the maximum value.
+ARGUMENT:: max
+Maximum value
+returns:: Maximum value
+
+METHOD:: step
+Get/set the step value.
+ARGUMENT:: step
+Step value
+returns:: Step value
+
+METHOD:: getState
+Get the initial value.
+returns:: Current value
 
 
+METHOD:: setState
+Set the initial value.
+ARGUMENT:: state
+
+
+METHOD:: next
+Compute the next value of the random walk
+returns:: Next value
+
+METHOD:: nextw
+Compute the next value of the random walk, with different probabilities for up/down/static
+ARGUMENT:: down
+Probability of stepping down
+ARGUMENT:: curr
+Probability of remaining constant on the current value
+ARGUMENT:: up
+Probability of stepping up
+returns:: Next value
 
 
 
@@ -104,84 +123,19 @@ returns:: A Router instance.
 
 EXAMPLES::
 
-Basic usage:
-
 code::
 
-(
-// Some test source
-SynthDef(\TestSignal, { | outCh=20 |
-	var sig, env, trig, freq;
-	trig = Impulse.kr(TRand.kr(0.5, 8, Impulse.kr(0.5)).round(0.25));
-	freq = TExpRand.kr(38, 99, trig).round(6).midicps;
-	env = EnvGen.ar(Env.perc(0.01, 0.21), trig, 1, 0.0, TExpRand.kr(0.75, 1.25, Impulse.kr(0.25)), doneAction: 0);
-	sig = SinOsc.ar(freq + SinOsc.ar(freq*env, 0, 0.5*freq*env*SinOsc.ar(0.1).abs.pow(4)), 0, env * 0.1 * AmpCompA.kr(freq));
-	sig = Pan2.ar(sig, Lag2.ar(TRand.ar(-0.63, 0.63, trig), 0.5));
-	Out.ar(outCh, sig);
-}).add;
-)
+// Init
+w = FRDRandomWalk(0.0, 1.0, 0.1, 0.5);
 
-(
-// White noise might be better for testing
-SynthDef(\TestSignal, { | outCh=20 |
-	var sig, env, trig, freq;
-	sig = WhiteNoise.ar(0.01) ! 2;
-	Out.ar(outCh, sig);
-}).add;
-)
+// Get next value
+w.next;
 
-(
-// Run source
-x = Synth.head(s, \TestSignal);
-// Run reverb plug in
-r = FRDReverbPlugIn(inCh: 20, outCh: 0, wet: 0.4, feed: 0.65, clearness: 0.19 ,centerfreq: 2400, addAction: 'addToTail', actionNode: 1);
-)
+// Get next value with different probabilities
+w.nextw(0.75, 0, 0.25);
 
-// Show GUI
-r.showGUI();
-
-// Some scoping
-(
-s.meter;
-s.scope;
-s.freqscope;
-)
-
-// Change clearness
-r.clearness_(-2);
-r.clearness_(2);
-r.clearness_(0);
-r.clearness_(0.25);
-r.clearness_(-0.25);
-
-// Change centerfreq
-r.centerfreq_(20);
-r.centerfreq_(400);
-r.centerfreq_(2000);
-r.centerfreq_(20000);
-
-// Change wet
-r.wet_(0.0);
-r.wet_(0.2);
-r.wet_(0.4);
-r.wet_(0.6);
-r.wet_(0.8);
-r.wet_(1.0);
-
-// Change feed
-r.feed_(0.25);
-r.feed_(0.35);
-r.feed_(0.45);
-r.feed_(0.55);
-r.feed_(0.65);
-
-// Change width
-r.width_(0);
-r.width_(0.25);
-r.width_(0.5);
-r.width_(0.75);
-r.width_(1);
-
+// Set the value manually
+w.setState(1);
 
 
 ::
