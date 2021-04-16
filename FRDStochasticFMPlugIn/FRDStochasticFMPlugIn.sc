@@ -3,7 +3,7 @@ MODULAZIONE DEI PARAMETRI DI SINTESI (TIMBRO)
 
 Parametri di FRDDX7PlugIn: (FM Synth)
 - numCarriers:   1 to 5
-- freq:               10 to 20000
+- pitch:               10 to 20000
 - harmonic:        true or false
 - imod:               [FROM, TO]      da 0.01 a inf (10 crea già molto aliasing)
 - amp:               0.0 to 1.0
@@ -65,7 +65,7 @@ Parametri:
 
 
 /*
-MODULAZIONE DEI PARAMETRI DI FREQUENZA
+MODULAZIONE DEI PARAMETRI DI pitchUENZA
 
 Parametri aggiuntivi:
 - - registro: gravissimo..acutissimo
@@ -74,16 +74,17 @@ Parametri aggiuntivi:
 FRDStochasticFMPlugIn {
 
 	var dict, gui, dx7, rout;
+	var nc_min=1, nc_max=5, nc_step=1, pitch_min=31, pitch_max=43, pitch_step=1,  harm_step=0.01, imod_min=0.05, imod_max=5, imod_step=0.05, amp_min=0.2, amp_max=0.75, amp_step=0.05, out_min=0, out_max=1, out_step=1, overlap_min=0.1, overlap_max=8, overlap_step=0.1, deviation_min=0.03, deviation_max=0.7, deviation_step=0.05, speed_min=0, speed_max=1, speed_step=1, complexity_min=0.2, complexity_max=0.8, complexity_step=0.05;
 
 	// new method
-	*new { | nc_min=1, nc_max=5, nc_step=1, nc_curr=2, freq_min=2000, freq_max=15000, freq_step=300.0, freq_curr=2440, harm_step=0.01, harm_curr=0.5, imod_min=0.05, imod_max=5, imod_step=0.05, imod_curr=2.25, amp_min=0.2, amp_max=0.75, amp_step=0.05, amp_curr=0.35, out_min=0, out_max=1, out_step=1, out_curr=0, overlap_min=0.1, overlap_max=8, overlap_step=0.1, overlap_curr=2.5, deviation_min=0.03, deviation_max=0.7, deviation_step=0.05, deviation_curr=0.2, speed_min=0, speed_max=1, speed_step=1, speed_curr=0.35, complexity_min=0.2, complexity_max=0.8, complexity_step=0.05, complexity_curr=0.5 |
+	*new { |  nc=2, pitch=2440, harm=0.5, imod=2.25, amp=0.35, overlap=2.5, deviation=0.2, speed=0.35, complexity=0.5, out=0 |
 
-		^super.new.init(nc_min, nc_max, nc_step, nc_curr, freq_min, freq_max, freq_step, freq_curr, harm_step, harm_curr, imod_min, imod_max, imod_step, imod_curr, amp_min, amp_max, amp_step, amp_curr, out_min, out_max, out_step, out_curr, overlap_min, overlap_max, overlap_step, overlap_curr, deviation_min, deviation_max, deviation_step, deviation_curr, speed_min, speed_max, speed_step, speed_curr, complexity_min, complexity_max, complexity_step, complexity_curr)
+		^super.new.init(nc, pitch, harm, imod, amp, overlap, deviation, speed, complexity, out)
 	}
 
 
 	// init method
-	init { | nc_min, nc_max, nc_step, nc_curr, freq_min, freq_max, freq_step, freq_curr, harm_step, harm_curr, imod_min, imod_max, imod_step, imod_curr, amp_min, amp_max, amp_step, amp_curr, out_min, out_max, out_step, out_curr, overlap_min, overlap_max, overlap_step, overlap_curr, deviation_min, deviation_max, deviation_step, deviation_curr, speed_min, speed_max, speed_step, speed_curr, complexity_min, complexity_max, complexity_step, complexity_curr |
+	init { | nc, pitch, harm, imod, amp, overlap, deviation, speed, complexity, out |
 		// Dictionary to store all the parameters
 		dict = Dictionary.new()
 		// Parametri
@@ -94,23 +95,23 @@ FRDStochasticFMPlugIn {
 				.put(\min, nc_min)
 				.put(\max, nc_max)
 				.put(\step, nc_step)
-				.put(\curr, nc_curr)
+				.put(\curr, nc)
 				.put(\type, Integer)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 1)
 					.put(\max, 5)
 				)
 			)
-			// Frequency
-			.put(\freq, Dictionary.new()
-				.put(\min, freq_min)
-				.put(\max, freq_max)
-				.put(\step, freq_step)
-				.put(\curr, freq_curr)
-				.put(\type, Float)
+			// pitch
+			.put(\pitch, Dictionary.new()
+				.put(\min, pitch_min)
+				.put(\max, pitch_max)
+				.put(\step, pitch_step)
+				.put(\curr, pitch)
+				.put(\type, Integer)
 				.put(\Boundaries, Dictionary.new()
-					.put(\min, 5)
-					.put(\max, 20000)
+					.put(\min, 0)
+					.put(\max, 127)
 				)
 			)
 			// Harmonic
@@ -118,7 +119,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, 0)
 				.put(\max, 1)
 				.put(\step, harm_step)
-				.put(\curr, harm_curr)
+				.put(\curr, harm)
 				.put(\type, Boolean)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
@@ -130,11 +131,11 @@ FRDStochasticFMPlugIn {
 				.put(\min, imod_min)
 				.put(\max, imod_max)
 				.put(\step, imod_step)
-				.put(\curr, imod_curr)
+				.put(\curr, imod)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
-					.put(\max, 50)
+					.put(\max, 1.2)
 				)
 			)
 			// Amplitude
@@ -142,7 +143,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, amp_min)
 				.put(\max, amp_max)
 				.put(\step, amp_step)
-				.put(\curr, amp_curr)
+				.put(\curr, amp)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
@@ -154,7 +155,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, out_min)
 				.put(\max, out_max)
 				.put(\step, out_step)
-				.put(\curr, out_curr)
+				.put(\curr, out)
 				.put(\type, Integer)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0)
@@ -167,7 +168,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, overlap_min)
 				.put(\max, overlap_max)
 				.put(\step, overlap_step)
-				.put(\curr, overlap_curr)
+				.put(\curr, overlap)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.1)
@@ -179,7 +180,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, deviation_min)
 				.put(\max, deviation_max)
 				.put(\step, deviation_step)
-				.put(\curr, deviation_curr)
+				.put(\curr, deviation)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
@@ -191,7 +192,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, speed_min)
 				.put(\max, speed_max)
 				.put(\step, speed_step)
-				.put(\curr, speed_curr)
+				.put(\curr, speed)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
@@ -203,7 +204,7 @@ FRDStochasticFMPlugIn {
 				.put(\min, complexity_min)
 				.put(\max, complexity_max)
 				.put(\step, complexity_step)
-				.put(\curr, complexity_curr)
+				.put(\curr, complexity)
 				.put(\type, Float)
 				.put(\Boundaries, Dictionary.new()
 					.put(\min, 0.0)
@@ -258,8 +259,8 @@ FRDStochasticFMPlugIn {
 		var complexity;
 		// Fare in modo che overlap possa essere effettuato prima o dopo
 		// il calcolo di rhythm e complexity?
-		complexity = [0.125, 0.1875, 0.25, 0.375, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6].reverse;
-		complexity = complexity.wchoose(Gaussian(complexity.size - 1, dict.at(\Parameters).at(\speed).at(\curr), dict.at(\Parameters).at(\complexity).at(\curr)));
+		complexity = [0.01875, 0.0375, 0.075, 0.125, 0.1875, 0.25, 0.375, 0.5, 0.75, 1, 1.5, 2, 3, 4].reverse;
+		complexity = complexity.wchoose(Gaussian(complexity.size - 1, center: dict.at(\Parameters).at(\speed).at(\curr), variance: dict.at(\Parameters).at(\complexity).at(\curr)));
 		complexity = complexity + (dict.at(\Parameters).at(\deviation).at(\curr).pow(6) * complexity * [-1, 1].choose);
 		complexity = complexity.clip(0.01, inf);
 		dict.at(\InternalParameters).put(\wait, complexity);
@@ -275,9 +276,9 @@ FRDStochasticFMPlugIn {
 					this.next();
 					dx7.createRandomRelativePatch(
 						numCarriers: dict.at(\Parameters).at(\numCarriers).at(\curr),
-						freq: dict.at(\Parameters).at(\freq).at(\curr),
+						freq: dict.at(\Parameters).at(\pitch).at(\curr).midicps,
 						amp: dict.at(\Parameters).at(\amp).at(\curr),
-						dur: dict.at(\InternalParameters).at(\dur) * clock.tempo.reciprocal,
+						dur: dict.at(\InternalParameters).at(\dur),
 						harmonic: dict.at(\Parameters).at(\harmonic).at(\curr).coin,
 						imod: dict.at(\Parameters).at(\imod).at(\curr) ! 2,
 						outCh: dict.at(\Parameters).at(\outCh).at(\curr)

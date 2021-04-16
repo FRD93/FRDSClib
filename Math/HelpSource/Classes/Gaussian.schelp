@@ -1,0 +1,49 @@
+TITLE:: Gaussian
+summary:: Generate an Array filled with a Gaussian curve.
+categories:: FRD-PlugIns
+
+
+DESCRIPTION::
+Fill an array of size N with a gaussian function controlling center and variance. Result is normalizeSum-med.
+
+
+
+CLASSMETHODS::
+
+
+
+METHOD:: new
+Create an Array of size N whose values follow a Gaussian curve.
+ARGUMENT:: size
+Length of the Array.
+ARGUMENT:: center
+Center of the bell (0.0 to 1.0).
+ARGUMENT:: variance
+Width of the bell (0.0 to 1.0).
+ARGUMENT:: curve
+If != 0, compute the Nth-power of the Array.
+returns:: An Array of size N whose values follow a Gaussian curve.
+
+
+
+EXAMPLES::
+
+
+
+code::
+
+g = Gaussian(256, 0.3, 0.3, 1);
+g.plot;
+
+(
+[
+	Gaussian(256, 0.3, 0.7, 3),
+	Gaussian(256, 0.4, 0.6, 2),
+	Gaussian(256, 0.5, 0.5, 1),
+	Gaussian(256, 0.6, 0.4, 0.5),
+	Gaussian(256, 0.7, 0.3, 0.25)
+].plot;
+)
+
+::
+

@@ -1,0 +1,261 @@
+TITLE:: FRDStochasticFMPlugIn
+summary:: Stochastic patch for FRDDX7PlugIn.
+categories:: FRD-PlugIns
+related:: FRDDX7PlugIn, FRDRandomWalk, Gaussian
+
+DESCRIPTION::
+Stochastic patch for FRDDX7PlugIn using FRDRandomWalk.
+
+
+CLASSMETHODS::
+ nc=2, pitch=2440, harm=0.5, imod=2.25, amp=0.35, overlap=2.5, deviation=0.2, speed=0.35, complexity=0.5, out=0
+METHOD:: new
+Create a new FRDStochasticFMPlugIn instance.
+
+ARGUMENT:: nc
+Number of carriers (1 to 5).
+
+ARGUMENT:: pitch
+MIDI note (0 to 127).
+
+ARGUMENT:: harm
+Harmonic probability (0.0 to 1.0).
+
+ARGUMENT:: imod
+Frequency modulation index (0.0 to 1.25).
+
+ARGUMENT:: amp
+Amplitude (0.0 to 1.0).
+
+ARGUMENT:: overlap
+Overlap factor for grains (input 0.0 to 1.0, resulting in 0.0375 to 4).
+
+ARGUMENT:: deviation
+Randomic deviation factor from input values (0.0 to 1.0).
+
+ARGUMENT:: speed
+Grain frequency (0.0 to 1.0)
+
+ARGUMENT:: complexity
+Repetitive/aleatory factor (0.0 to 1.0).
+
+ARGUMENT:: out
+Output channel.
+
+
+
+returns:: A FRDStochasticFMPlugIn instance.
+
+
+INSTANCEMETHODS::
+
+METHOD:: lineTo
+Create an envelop to smooth the change of a specified parameter from a value to another in some time.
+
+ARGUMENT:: param
+Parameter to change
+
+ARGUMENT:: from
+Value from
+
+ARGUMENT:: to
+Value to
+
+ARGUMENT:: time
+Envelope time
+
+ARGUMENT:: round
+> 0 for stepping the envelope
+
+ARGUMENT:: power
+Change the curve type (1=linear)
+
+
+METHOD:: minGrainsPerSecond
+Minimum grains per second
+
+ARGUMENT:: newMinGPS
+Grains per second
+
+returns:: Minimum grains per second
+
+METHOD:: maxGrainsPerSecond
+Maximum grains per second
+
+ARGUMENT:: newMaxGPS
+Grains per second
+
+returns:: Maximum grains per second
+
+METHOD:: ctrlDelta
+Ctrl routine time delta for parameters update
+
+ARGUMENT:: newCTRLDelta
+New time value
+
+returns:: Ctrl routine time delta
+
+METHOD:: durScale
+Multiplier of grain duration for Syncronous Granular Synthesis
+
+ARGUMENT:: newDurScale
+New value
+
+returns:: Multiplier of grain duration for Syncronous Granular Synthesis
+
+
+METHOD:: removeSelection
+Remove a selection
+
+ARGUMENT:: selectionNumber
+Selection number
+
+METHOD:: stop
+Stop the granulator
+
+
+
+METHOD:: asMixerMatrixProcess
+Return a Dictionary for integration with FRDMixerMatrixPlugIn.
+
+
+
+METHOD:: showGUI
+Show graphical user interface.
+
+METHOD:: sfFrames
+Number of frames in loaded soundfile
+
+returns:: Soundfile frames
+
+
+METHOD:: addSelection
+Add a selection
+
+ARGUMENT:: selectionNumber
+Number of the selection
+
+ARGUMENT:: selectionStart
+Start frame of the selection
+
+ARGUMENT:: selectionLength
+Length of selection in frames
+
+
+
+
+METHOD:: atk
+Attack % of the grains
+
+ARGUMENT:: newAtk
+Attack value (0.0 to 1.0)
+
+returns:: Attack % of the grains
+
+METHOD:: start
+Start the granulator
+
+ARGUMENT:: clock
+TempoClock instance
+
+ARGUMENT:: quant
+Quant
+
+
+METHOD:: amp
+Get/set the amplitude of the grains
+
+ARGUMENT:: newAmp
+Amplitude
+
+returns:: Amplitude of the grains
+
+METHOD:: ctrlRandSeedLoop
+Set the random seed for the ctrl routine ciclically inside a loop.
+
+ARGUMENT:: seed
+Random seed
+
+ARGUMENT:: speed
+Random seed reset time delta
+
+
+
+METHOD:: rate
+Rate of the buffer play
+
+ARGUMENT:: minRateRange
+Minimum rate value
+
+ARGUMENT:: maxRateRange
+Maximum rate value
+
+
+
+METHOD:: ctrlRandSeed
+Set the random seed for the ctrl routine
+
+ARGUMENT:: seed
+Random seed
+
+
+
+METHOD:: pan
+Get/set the pan of the grains
+
+ARGUMENT:: newPan
+Pan value
+
+returns:: Pan value
+
+METHOD:: ctrlRandSpeed
+Set the reset time delta for the random seed loop of the ctrl parameters
+
+ARGUMENT:: speed
+Random seed reset time delta
+
+METHOD:: stopRandSeedLoop
+Stop the random seed loop of the ctrl parameters
+
+
+METHOD:: outCh
+Get/set the output channel
+
+ARGUMENT:: ch
+New output channel
+
+returns:: Output channel
+
+
+EXAMPLES::
+
+code::
+
+// Init
+f = FRDStochasticFMPlugIn();
+
+// Show graphical user interface
+f.showGUI;
+
+// Start
+f.play(SystemClock, [1, 0, 0]);
+
+// Stop
+f.stop;
+::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
