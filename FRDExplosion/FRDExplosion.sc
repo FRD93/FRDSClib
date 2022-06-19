@@ -23,6 +23,10 @@ FRDExplosion {
 
 	}
 
+	play {
+		Synth(\ExplosionSpike, [\amp, rrand(amp / 4, amp), \out, bus]);
+	}
+
 	showGUI {
 
 		win = Window.new("Explosion generator").onClose_({
@@ -99,7 +103,7 @@ FRDExplosion {
 			sig = Pan2.ar(sig, Rand(-0.2, 0.2));
 			Out.ar(out, sig * env * amp);
 			DetectSilence.ar(CombC.ar(sig, 0.2, 0.1, 1), doneAction: 2);
-		}).writeDefFile;
+		}).writeDefFile.add;
 		SynthDef(\ExplosionRev, { | amp=0.1, r1=370, r2=270, r3=470, t1=15, t2=10, t3=3, in=20, out=0 |
 			var sig = In.ar(in, 2);
 			r1 = Lag2.ar(K2A.ar(r1), 1);
@@ -113,7 +117,7 @@ FRDExplosion {
 			sig = GVerb.ar(sig, r3, t3, 0.9, 0.2, 100, 0.30, maxroomsize: 800, mul: 0.8);
 			sig = LeakDC.ar(Limiter.ar(sig));
 			Out.ar(out, sig);
-		}).writeDefFile;
+		}).writeDefFile.add;
 	}
 }
 
