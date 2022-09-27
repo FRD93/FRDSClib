@@ -1,5 +1,5 @@
 FRDDX7PlugIn {
-
+	var notes, stopGates;
 
 	// new method
 	*new {
@@ -9,7 +9,8 @@ FRDDX7PlugIn {
 
 	// init method
 	init {
-
+		notes = Array.newClear(128);
+		stopGates = Array.fill(128, {0});
 	}
 
 	randSeed_ { | seed |
@@ -32,112 +33,178 @@ FRDDX7PlugIn {
 
 
 
+
+
 	// Create random module patch in relative mode
 	createRandomRelativePatch { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0 |
-			Routine{
-				var modules, carriers, modulators, params, indexes, freqs, imods;
-				var patch, lastModulators;
-				var busses = 6.collect({ Bus.audio(Server.local, 1) });
-				numCarriers = numCarriers.clip(0, 5);
-				Server.local.sync;
-				if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
-				freqs = freqs.clip(20, 20000);
-				imods = 6.collect({rrand(imod[0], imod[1])});
-				modules = 6.collect({ | id |
-					//this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) )
-					if( id < numCarriers, {
-						this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: 0, l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: 1 )
-					}, {
-						this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.01, 1.0), l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: rrand(0.4, 1.0) )
-					})
-				});
-				indexes = (0..5).scramble;
-				carriers = indexes[0..numCarriers-1];
-				modulators = indexes[numCarriers..];
-				if(modulators.size == 1, {modulators = modulators[0] ! 2;});
-				patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
-				lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
-				patch.do({ | pa |
-					modules[pa[0]].set(\extCh, busses[pa[1]]);
-				});
+		Routine{
+			var modules, carriers, modulators, params, indexes, freqs, imods;
+			var patch, lastModulators;
+			var busses = 6.collect({ Bus.audio(Server.local, 1) });
+			numCarriers = numCarriers.clip(0, 5);
+			Server.local.sync;
+			if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+			freqs = freqs.clip(20, 20000);
+			imods = 6.collect({exprand(imod[0], imod[1])});
+			modules = 6.collect({ | id |
+				//this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.0, 1.0), l1: rrand(0.0, 1.0), l2: rrand(0.0, 1.0), l3: rrand(0.0, 1.0), r1: rrand(0.0, 1.0), r2: rrand(0.0, 1.0), r3: rrand(0.0, 1.0), r4: rrand(0.0, 1.0) )
+				if( id < numCarriers, {
+					this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: 0, l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: 1 )
+				}, {
+					this.spawnModuleRelative(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], dur: dur, l4: rrand(0.01, 1.0), l1: rrand(0.01, 1.0), l2: rrand(0.01, 1.0), l3: rrand(0.01, 1.0), r1: rrand(0.01, 1.0), r2: rrand(0.01, 1.0), r3: rrand(0.01, 1.0), r4: rrand(0.4, 1.0) )
+				})
+			});
+			indexes = (0..5).scramble;
+			carriers = indexes[0..numCarriers-1];
+			modulators = indexes[numCarriers..];
+			if(modulators.size == 1, {modulators = modulators[0] ! 2;});
+			patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+			lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
+			patch.do({ | pa |
+				modules[pa[0]].set(\extCh, busses[pa[1]]);
+			});
 
-				carriers.do({ | cID, id |
-					modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
-					lastModulators.do({|iModID, id2|
-						if(0.5.coin, {
-							modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
-						});
+			carriers.do({ | cID, id |
+				modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
+				lastModulators.do({|iModID, id2|
+					if(0.5.coin, {
+						modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
 					});
-					modules[cID].set(\isCarrier, 1);
-					modules[cID].set(\l4, 0);
-					modules[cID].set(\fmod, freq);
-					modules[cID].set(\feedback, 0);
-					modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
-					modules[cID].set(\outCh, outCh);
 				});
-				// Must free buffers when done!
-				(dur+0.1).wait;
-				Server.local.sync;
-				busses.do({|bus| bus.free(clear: true)});
-			}.play;
+				modules[cID].set(\isCarrier, 1);
+				modules[cID].set(\l4, 0);
+				modules[cID].set(\fmod, freq);
+				modules[cID].set(\feedback, 0);
+				modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
+				modules[cID].set(\outCh, outCh);
+			});
+			// Must free buffers when done!
+			(dur+0.1).wait;
+			Server.local.sync;
+			busses.do({|bus| bus.free(clear: true)});
+		}.play;
+	}
+
+
+	// Play a note
+	playRandomRelativePatchADSR { | numCarriers=1, midi_note=64, velocity=64, dur=120, harmonic=true, imod=#[0.3, 1], outCh=0 |
+		Routine{
+			var modules, carriers, modulators, params, indexes, freq, freqs, imods, amp;
+			var patch, lastModulators;
+			var busses = 6.collect({ Bus.audio(Server.local, 1) });
+			freq = midi_note.midicps;
+			amp = velocity / 127;
+			numCarriers = numCarriers.clip(0, 5);
+			Server.local.sync;
+			if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+			freqs = freqs.clip(20, 20000);
+			imods = 6.collect({rrand(imod[0], imod[1])});
+			modules = 6.collect({ | id |
+				if( id < numCarriers, {
+					this.spawnModuleAbsolute(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], l1: rrand(0.01, 0.1), l2: rrand(0.01, 0.1), l3: rrand(0.01, 0.1), l4: rrand(0.01, 0.1), r1: 0.01, r2: rrand(0.01, 1.0) * 12, r3: rrand(0.01, 1.0) * 12, r4: 1 * 12 )
+				}, {
+					this.spawnModuleAbsolute(fmod: freqs[id], imod: imods[id], feedback: exprand(0.001, 1.0), outCh: busses[id], l1: rrand(0.01, 0.1), l2: rrand(0.01, 0.1), l3: rrand(0.01, 0.1), l4: rrand(0.01, 0.1), r1: 0.01, r2: rrand(0.01, 1.0) * 12, r3: rrand(0.01, 1.0) * 12, r4: rrand(0.4, 1.0)  * 12)
+				})
+			});
+			indexes = (0..5).scramble;
+			carriers = indexes[0..numCarriers-1];
+			modulators = indexes[numCarriers..];
+			if(modulators.size == 1, {modulators = modulators[0] ! 2;});
+			patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+			lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
+			patch.do({ | pa |
+				modules[pa[0]].set(\extCh, busses[pa[1]]);
+			});
+
+			carriers.do({ | cID, id |
+				modules[cID].set(\extCh, busses[modulators[id % lastModulators.size]]);
+				lastModulators.do({|iModID, id2|
+					if(0.5.coin, {
+						modules[iModID].set(\outCh, busses[modulators[id % lastModulators.size]]);
+					});
+				});
+				modules[cID].set(\isCarrier, 1);
+				modules[cID].set(\l4, 0);
+				modules[cID].set(\fmod, freq);
+				modules[cID].set(\feedback, 0);
+				modules[cID].set(\imod, ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal); // Psychoacoustic amplitude compensation for carriers
+				modules[cID].set(\outCh, outCh);
+			});
+
+			while({ stopGates[midi_note] != 1 }, { 0.01.wait; });
+			"stopping note".postln;
+			stopGates[midi_note] = 0;
+
+			modules.do({|module| module.set(\gate, 0)});
+			0.1.wait;
+			Server.local.sync;
+			// Must free buffers when done!
+			busses.do({|bus| bus.free(clear: true)});
+		}.play;
+	}
+
+
+	// Stop a note
+	stopRandomRelativePatchADSR { | midi_note |
+		stopGates[midi_note] = 1;
 	}
 
 
 	// Create random module patch in relative mode NRT
 	createRandomRelativePatchNRT { | numCarriers=1, freq=440, amp=0.5, dur=3, harmonic=true, imod=#[0.3, 1], outCh=0, nrtTimeStamp=0, startNode=1002, startPrivateBus=40 |
-	// 		var rs = [r1, r2, r3, r4].normalizeSum * dur;
-	// ^Synth.head(Server.local, \FRDDX7_module, [\fmod, fmod, \imod, imod, \feedback, feedback, \extCh, extCh, \outCh, outCh, \l4, l4, \l1, l1, \l2, l2, \l3, l3, \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]);
-	var score = [];
-	var carriers, modulators, params, indexes, freqs, imods;
-	var patch, lastModulators;
-	var busses = 6.collect({ | id | startPrivateBus + id });
-	var modules = 6.collect({ | id |  startNode + id });
-	numCarriers = numCarriers.clip(0, 5);
-	if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
-	freqs = freqs.clip(20, 20000);
-	imods = 6.collect({rrand(imod[0], imod[1])});
+		// 		var rs = [r1, r2, r3, r4].normalizeSum * dur;
+		// ^Synth.head(Server.local, \FRDDX7_module, [\fmod, fmod, \imod, imod, \feedback, feedback, \extCh, extCh, \outCh, outCh, \l4, l4, \l1, l1, \l2, l2, \l3, l3, \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]);
+		var score = [];
+		var carriers, modulators, params, indexes, freqs, imods;
+		var patch, lastModulators;
+		var busses = 6.collect({ | id | startPrivateBus + id });
+		var modules = 6.collect({ | id |  startNode + id });
+		numCarriers = numCarriers.clip(0, 5);
+		if(harmonic == true, {freqs = 6.collect({freq * [0.5, 1, 0.75, 1.5, 2, 3, 4].choose})}, {freqs = 6.collect({rrand(5, 1000)})});
+		freqs = freqs.clip(20, 20000);
+		imods = 6.collect({exprand(imod[0], imod[1])});
 
-	6.do({|id|
-		var li = {rrand(0.0, 1.0)} ! 6;
-		var rs = ({rrand(0.0, 1.0)} ! 6).normalizeSum * dur;
-		score = score ++ [[
-			nrtTimeStamp, [\s_new, \FRDDX7_module, modules[id], 0, 0, \fmod, freqs[id], \imod, imods[id], \feedback, exprand(0.001, 1.0), \extCh, 128, \outCh, busses[id], \l4, li[3], \l1, li[0], \l2, li[1], \l3, li[2], \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]
-		]];
-	});
-
-	indexes = (0..5).scramble;
-	carriers = indexes[0..numCarriers-1];
-	modulators = indexes[numCarriers..];
-	if(modulators.size == 1, {modulators = modulators[0] ! 2;});
-	patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
-	lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
-
-	patch.do({ | pa |
-		score = score ++ [[
-			nrtTimeStamp, [\n_set, modules[pa[0]], \extCh, busses[pa[1]] ]
-		]];
-	});
-
-	carriers.do({ | cID, id |
-		score = score ++ [[
-			nrtTimeStamp, [\n_set, modules[cID], \extCh, busses[modulators[id % lastModulators.size]] ]
-		]];
-
-		lastModulators.do({|iModID, id2|
-			if(0.5.coin, {
-				score = score ++ [[
-					nrtTimeStamp, [\n_set, modules[iModID], \outCh, busses[modulators[id % lastModulators.size]] ]
-				]];
-			});
+		6.do({|id|
+			var li = {rrand(0.0, 1.0)} ! 6;
+			var rs = ({rrand(0.0, 1.0)} ! 6).normalizeSum * dur;
+			score = score ++ [[
+				nrtTimeStamp, [\s_new, \FRDDX7_module, modules[id], 0, 0, \fmod, freqs[id], \imod, imods[id], \feedback, exprand(0.001, 1.0), \extCh, 128, \outCh, busses[id], \l4, li[3], \l1, li[0], \l2, li[1], \l3, li[2], \r1, rs[0], \r2, rs[1], \r3, rs[2], \r4, rs[3]]
+			]];
 		});
 
-		score = score ++ [[
-			nrtTimeStamp, [\n_set, modules[cID], \isCarrier, 1, \l4, 0, \fmod, freq, \feedback, 0, \imod,  ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal, \outCh, outCh]
-		]];
+		indexes = (0..5).scramble;
+		carriers = indexes[0..numCarriers-1];
+		modulators = indexes[numCarriers..];
+		if(modulators.size == 1, {modulators = modulators[0] ! 2;});
+		patch = modulators.collect({|mi| var myM = modulators.copy; myM.remove(mi); [mi, myM.choose] }).collect({|tuple| tuple.sort});
+		lastModulators = patch.collect({|mp| mp[0]}).as(Set).as(Array).sort;
 
-	});
-	^score
-}
+		patch.do({ | pa |
+			score = score ++ [[
+				nrtTimeStamp, [\n_set, modules[pa[0]], \extCh, busses[pa[1]] ]
+			]];
+		});
+
+		carriers.do({ | cID, id |
+			score = score ++ [[
+				nrtTimeStamp, [\n_set, modules[cID], \extCh, busses[modulators[id % lastModulators.size]] ]
+			]];
+
+			lastModulators.do({|iModID, id2|
+				if(0.5.coin, {
+					score = score ++ [[
+						nrtTimeStamp, [\n_set, modules[iModID], \outCh, busses[modulators[id % lastModulators.size]] ]
+					]];
+				});
+			});
+
+			score = score ++ [[
+				nrtTimeStamp, [\n_set, modules[cID], \isCarrier, 1, \l4, 0, \fmod, freq, \feedback, 0, \imod,  ((10.0 / freqs[cID]).pow(0.33)) * amp * carriers.size.reciprocal, \outCh, outCh]
+			]];
+
+		});
+		^score
+	}
 
 
 
@@ -932,10 +999,11 @@ FRDDX7PlugIn {
 
 	// Write Synth Definitions to file
 	writeSynthDef {
-		SynthDef(\FRDDX7_module, { | fmod=440, imod=2, feedback=0.0, extCh=128, outCh=100, l4=0, l1=1, l2=0.7, l3=0.2, r1=0.01, r2=0.1, r3=0.7, r4=1, isCarrier=0 |
-			var mod, feed, ext, env;
+		SynthDef(\FRDDX7_module, { | fmod=440, imod=2, feedback=0.0, extCh=128, outCh=100, l4=0, l1=1, l2=0.7, l3=0.2, r1=0.01, r2=0.1, r3=0.7, r4=1, isCarrier=0, gate=1 |
+			var mod, feed, ext, env, aenv;
 			l4 = Select.kr(isCarrier > 0, [l4, 0]);
-			env = EnvGen.ar(Env.new([l4, l1, l2, l3, l4, l4], [r1, r2, r3, r4, r4], [(l1-l4).sign, (l2-l1).sign, (l3-l2).sign, (l4-l3).sign, 0] * 2), doneAction: 2);
+			aenv = EnvGen.ar(Env.adsr(0, 1, 1, 1), gate, doneAction: 2);
+			env = EnvGen.ar(Env.new([l4, l1, l2, l3, l4, l4], [r1, r2, r3, r4, r4], [(l1-l4).sign, (l2-l1).sign, (l3-l2).sign, (l4-l3).sign, 0] * 2), doneAction: 2) * aenv;
 			ext = InFeedback.ar(extCh, 1);
 			feed = LocalIn.ar(1);
 			fmod = fmod + ext + feed;
@@ -945,7 +1013,7 @@ FRDDX7PlugIn {
 			mod = Select.ar(isCarrier > 0, [mod, Limiter.ar(LeakDC.ar(mod))]);
 			mod = HPF.ar(mod, 20);
 
-			Select.kr( isCarrier > 0, [ Out.ar(outCh, mod), Out.ar(outCh + [1], mod ) ]);
+			Select.kr( isCarrier > 0, [ Out.ar(outCh, LeakDC.ar(mod) * AmpCompA.ir(fmod)), Out.ar(outCh + [1], mod ) ]);
 			//Out.ar(outCh, mod);
 		}).writeDefFile.add;
 	}

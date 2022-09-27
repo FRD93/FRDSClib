@@ -218,9 +218,10 @@ FRDReverbPlugIn {
 		SynthDef(\FRDReverb, {| inCh, outCh, wet=0.5, feed=0.35, width=0.5, lowshelff=2646, lowshelfg=0, hishelff=2646, hishelfg=0 |
 			var in, out;
 			in = In.ar(inCh, 2);
-			out = FRDReverb.ar(fl: in[0], fr: in[1], feed: feed, width: width, lowshelff: lowshelff, lowshelfg: lowshelfg, hishelff: hishelff, hishelfg: hishelfg, wet: wet);
+			//out = FRDReverb.ar(fl: in[0], fr: in[1], feed: feed, width: width, lowshelff: lowshelff, lowshelfg: lowshelfg, hishelff: hishelff, hishelfg: hishelfg, wet: wet);
+			out = (in * (1.0 - wet)) + (VBJonVerb.ar(in, feed) * wet);
 			Out.ar(outCh, out);
-		}).writeDefFile;
+		}).writeDefFile.add;
 
 	}
 

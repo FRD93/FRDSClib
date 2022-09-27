@@ -1,3 +1,10 @@
+d = FRDDX7PlugIn();
+d.writeSynthDef;
+
+
+d = FRDDX7PlugIn();
+d.playRandomRelativePatchADSR(numCarriers: 3, midi_note: 43, imod: [1.4, 12]);
+d.stopRandomRelativePatchADSR(midi_note: 43);
 
 (
 d = FRDDX7PlugIn();
@@ -8,18 +15,25 @@ r = Routine{
 	}
 }.play;
 )
-r.stop
+r.stop;
 
+s.record;
+s.stopRecording;
 
+[0, 4, 5, 7, 9].choose + ((1..12).choose * 12) + 0;
 (
+var seed = 34;
+thisThread.randSeed_(seed);
 d = FRDDX7PlugIn();
 r = Routine{
+	var wait = 0.0375;
+
 	inf.do({|id|
 		if(id%4 == 0, {thisThread.randSeed_(86735)});
-		d.createRandomRelativePatch(numCarriers: 1, freq: exprand(50, 10000) * ((id+1)%4) / 2, amp: rrand(0.1, 0.5), dur: 0.2, harmonic: id%2, imod: #[0.1, 5], outCh: [0, 1].choose);
+		d.createRandomRelativePatch(numCarriers: 1, freq: ([0, 4, 7].choose + ((4..12).choose * 10) + 0).midicps, amp: rrand(0.01, 0.1), dur: 1, harmonic: true, imod: #[0.1, 1.5], outCh: [0, 1].choose);
 //		0.2.wait;
-		if(id%8 == 0, {0.1.wait;}, {if(id%9 == 0, {0.1.wait;}, {0.2.wait});});
-
+		if(id%8 == 0, {wait.wait;}, {if(id%9 == 0, {wait.wait;}, {(wait / 2).wait});});
+		if(id%32 == 0, {thisThread.randSeed_(seed);});
 	});
 }.play;
 )

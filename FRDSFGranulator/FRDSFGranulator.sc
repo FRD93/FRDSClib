@@ -3,6 +3,7 @@ FRDSFGranulator {
 	var win, sfv, delete, setrate, buf, sf, sndrout, ctrlrout, ctrlseed, ctrlrandspeed, ctrlseedrout, netaddr, sfv_selectionrout, sfv_selections;
 	var pan, pan2, pos, duration, which, rate, randrate, wait, outCh=0, name_sfg, atk=0.5;
 	var amp = 0.7, durScale = 8, minGrainsPerSecond = 8, maxGrainsPerSecond = 64, ctrlDelta=0.1;
+	var amp_r, durScale_r, minGrainsPerSecond_r, maxGrainsPerSecond_r, ctrlDelta_r, rate_r, pan_r;
 
 	*new { | name="SFG1", sf_path, video_addr=57200, parent=nil |
 
@@ -230,25 +231,32 @@ FRDSFGranulator {
 		power = (from > to).if({1/power}, {power});
 		case
 		{param == "amp"}	{
-			Routine{size.do({|id| amp = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			amp_r.stop;
+			amp_r = Routine{size.do({|id| amp = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		}
 		{param == "durScale"}	{
-			Routine{size.do({|id| durScale = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			durScale_r.stop;
+			durScale_r = Routine{size.do({|id| durScale = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		}
 		{param == "minGrainsPerSecond"}	{
-			Routine{size.do({|id| minGrainsPerSecond = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			minGrainsPerSecond_r.stop;
+			minGrainsPerSecond_r = Routine{size.do({|id| minGrainsPerSecond = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		}
 		{param == "maxGrainsPerSecond"}	{
-			Routine{size.do({|id| maxGrainsPerSecond = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			maxGrainsPerSecond_r.stop;
+			maxGrainsPerSecond_r = Routine{size.do({|id| maxGrainsPerSecond = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		}
 		{param == "ctrlDelta"}	{
-			Routine{size.do({|id| ctrlDelta = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			ctrlDelta_r.stop;
+			ctrlDelta_r = Routine{size.do({|id| ctrlDelta = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		}
 		{param == "rate"}	{
-			Routine{size.do({|id| rate = (from + (((id+1)/size).pow(power)*deltaV)).round(round); randrate = [rate, rate]; deltaT.wait;})}.play;
+			rate_r.stop;
+			rate_r = Routine{size.do({|id| rate = (from + (((id+1)/size).pow(power)*deltaV)).round(round); randrate = [rate, rate]; deltaT.wait;})}.play;
 		}
 		{param == "pan"}	{
-			Routine{size.do({|id| pan = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
+			pan_r.stop;
+			pan_r = Routine{size.do({|id| pan = (from + (((id+1)/size).pow(power)*deltaV)).round(round); deltaT.wait;})}.play;
 		};
 
 	}

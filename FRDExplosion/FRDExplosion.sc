@@ -90,7 +90,7 @@ FRDExplosion {
 	writeSynthDef {
 		SynthDef(\ExplosionSpike, { | amp=0.1, out=0 |
 			var sig = PinkNoise.ar(1) * LFNoise1.ar(250);
-			var env = EnvGen.ar(Env.perc(0.001, Rand(0.1, 0.5)));
+			var env = EnvGen.ar(Env.perc(0.001, Rand(0.35, 0.5)));
 			sig = HPF.ar(sig, 20);
 
 			sig = sig + Pan2.ar(CombC.ar(sig, 1.5, ExpRand(0.014, 1.0), Rand(0.2, 1.7), Rand(0.1, 0.25)), Rand(-0.5, 0.5));

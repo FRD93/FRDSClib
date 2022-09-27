@@ -40,14 +40,22 @@ FRDMIDIController {
 				.put("Knob 14", 91)
 				.put("Knob 15", 79)
 				.put("Knob 16", 72)
-				.put("Pad 1", 22)
-				.put("Pad 2", 23)
-				.put("Pad 3", 24)
-				.put("Pad 4", 25)
-				.put("Pad 5", 26)
-				.put("Pad 6", 27)
-				.put("Pad 7", 28)
-				.put("Pad 8", 29)
+				.put("Pad 1", 20) // I Pad vanno messi come "Switched Control" sul MIDI Control Center di Arturia
+				.put("Pad 2", 21)
+				.put("Pad 3", 22)
+				.put("Pad 4", 23)
+				.put("Pad 5", 24)
+				.put("Pad 6", 25)
+				.put("Pad 7", 26)
+				.put("Pad 8", 27)
+				.put("Pad 9", 28)
+				.put("Pad 10", 29)
+				.put("Pad 11", 30)
+				.put("Pad 12", 31)
+				.put("Pad 13", 32)
+				.put("Pad 14", 33)
+				.put("Pad 15", 34)
+				.put("Pad 16", 35)
 			)
 			.put("CC Funcs", Dictionary.new
 				.put("Knob 1", 0)
@@ -76,6 +84,14 @@ FRDMIDIController {
 				.put("Pad 6", 0)
 				.put("Pad 7", 0)
 				.put("Pad 8", 0)
+				.put("Pad 9", 0)
+				.put("Pad 10", 0)
+				.put("Pad 11", 0)
+				.put("Pad 12", 0)
+				.put("Pad 13", 0)
+				.put("Pad 14", 0)
+				.put("Pad 15", 0)
+				.put("Pad 16", 0)
 			);
 		});
 	}
@@ -106,6 +122,14 @@ FRDMIDIController {
 			params.at("Notes").at(note.asString).set(\gate, 0);
 			params.at("Notes").put(note.asString, 0);
 		}));
+	}
+
+	addFuncToNotes { | noteOnFunc, noteOffFunc, chan=0 |
+		if(params.at("NoteOn").class == MIDIFunc, { params.at("NoteOn").free; });
+		"Adding NoteOn synth".postln;
+		params.put("NoteOn", MIDIFunc.noteOn(noteOnFunc));
+		if(params.at("NoteOff").class == MIDIFunc, { params.at("NoteOff").free; });
+		params.put("NoteOff", MIDIFunc.noteOff(noteOffFunc));
 	}
 
 	mapCCToSynthArg { | cc, param, map_func |
@@ -145,14 +169,22 @@ Knob 16: 72
 
 * * PADS * *
 
-Pad 1: 22
-Pad 2: 23
-Pad 3: 24
-Pad 4: 25
-Pad 5: 26
-Pad 6: 27
-Pad 7: 28
-Pad 8: 29
+Pad 1: 20
+Pad 2: 21
+Pad 3: 22
+Pad 4: 23
+Pad 5: 24
+Pad 6: 25
+Pad 7: 26
+Pad 8: 27
+Pad 9: 28
+Pad 10: 29
+Pad 11: 30
+Pad 12: 31
+Pad 13: 32
+Pad 14: 33
+Pad 15: 34
+Pad 16: 35
 
 * * SLIDE * *
 

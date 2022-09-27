@@ -1,7 +1,7 @@
 FRDReverb {
 	*ar {|fl, fr, feed = 0.1, width = 0.8, lowshelff=160, lowshelfg=0, hishelff=2625, hishelfg=0, hpf=10, lpf=20000, wet = 0.5|
 
-		var size = 32;
+		var size = 16;
 
 		var cdur = ControlDur.ir;
 		var feed_delays, delays_fl, delays_fr, lin, rctrig, out;
