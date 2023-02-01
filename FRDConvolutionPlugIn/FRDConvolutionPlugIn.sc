@@ -42,12 +42,13 @@ FRDConvolutionPlugIn {
 			irspectrum.preparePartConv(irbuffer, fftsize);
 			irbuffer.free; // don't need time domain data anymore, just needed spectral version
 			SynthDef( \FRDConvolution, { | inCh=20, outCh=0, inGain=0, outGain=0 |
-				var input, chain, mag_mean=0, mag_std_dev=0, mag_thresh=1.0, mags_result, fft_size=2048;
-				input = In.ar( inCh, 2 ) * inGain.dbamp * 0.0125;
+				var input, in_snd, chain, mag_mean=0, mag_std_dev=0, mag_thresh=1.0, mags_result, fft_size=2048;
+				in_snd = In.ar( inCh, 2 ) * inGain.dbamp;
+				input = in_snd * 0.0125;
 				input = [ PartConv.ar( input[0], fftsize, irspectrum.bufnum ), PartConv.ar( input[1], fftsize, irspectrum.bufnum ) ];
 				input = CompanderD.ar( input, 0.6, 1, 0.1 );
 				input = Limiter.ar(input);
-				Out.ar( outCh, input * outGain.dbamp );
+				Out.ar( outCh, (in_snd * inGain.dbamp) + (input * outGain.dbamp) );
 			}).add;
 			0.1.wait;
 			conv = Synth(\FRDConvolution, [ \inCh, inCh_r, \outCh, outCh_r, \inGain, inGain_r, \outGain, outGain_r ], actionNode_r, addAction_r);

@@ -1,11 +1,11 @@
 FRDChimes {
 	var data, routine;
 
-	*new { | base_note=34, sequence_len=1, amp=0.5, out=0, note_pattern, delta_pattern, dur_pattern, clock, quant |
-		^super.new.init(base_note, sequence_len, amp, out, note_pattern, delta_pattern, dur_pattern, clock, quant);
+	*new { | base_note=34, sequence_len=1, amp=0.5, out=0, note_pattern, delta_pattern, dur_pattern, clock, quant, addAction, target |
+		^super.new.init(base_note, sequence_len, amp, out, note_pattern, delta_pattern, dur_pattern, clock, quant, addAction, target);
 	}
 
-	init { | base_note=34, sequence_len=1, amp=0.5, out=0, note_pattern, delta_pattern, dur_pattern, clock, quant |
+	init { | base_note=34, sequence_len=1, amp=0.5, out=0, note_pattern, delta_pattern, dur_pattern, clock, quant, addAction, target |
 		data = Dictionary.new;
 		data.put("base_note", base_note);
 		data.put("sequence_len", sequence_len);
@@ -16,12 +16,14 @@ FRDChimes {
 		data.put("dur_pattern", dur_pattern);
 		data.put("clock", clock);
 		data.put("quant", quant);
+		data.put("addAction", addAction);
+		data.put("target", target);
 	}
 
 	play {
 		routine = Routine{
 			data["sequence_len"].do({ | id |
-				Synth.head(Server.local, \FRDChime, [\freq, (data["note_pattern"].wrapAt(id) + data["base_note"]).midicps, \dur, data["dur_pattern"].wrapAt(id) * data["delta_pattern"].wrapAt(id), \pan, rrand(-0.63, 0.63), \amp, data["amp"], \out, data["out"]]);
+				Synth(\FRDChime, [\freq, (data["note_pattern"].wrapAt(id) + data["base_note"]).midicps, \dur, data["dur_pattern"].wrapAt(id) * data["delta_pattern"].wrapAt(id), \pan, rrand(-0.63, 0.63), \amp, data["amp"], \out, data["out"]], data["target"], data["addAction"]);
 				data["delta_pattern"].wrapAt(id).wait;
 			});
 		}.play(data["clock"], data["quant"]);
@@ -32,7 +34,7 @@ FRDChimes {
 			data["sequence_len"].do({ | seq_id |
 				data["note_pattern"].do({ | note, id |
 					var delta_choice = data["delta_pattern"].size.rand;
-					Synth.head(Server.local, \FRDChime, [\freq, (data["note_pattern"].choose + data["base_note"]).midicps, \dur, data["dur_pattern"][delta_choice] * data["delta_pattern"][delta_choice], \pan, rrand(-0.63, 0.63), \amp, data["amp"], \out, data["out"]]);
+					Synth(\FRDChime, [\freq, (data["note_pattern"].choose + data["base_note"]).midicps, \dur, data["dur_pattern"][delta_choice] * data["delta_pattern"][delta_choice], \pan, rrand(-0.63, 0.63), \amp, data["amp"], \out, data["out"]], data["target"], data["addAction"]);
 					data["delta_pattern"][delta_choice].wait;
 				});
 			});
@@ -84,16 +86,17 @@ FRDChimes {
 	}
 
 	writeSynthDef {
-		SynthDef(\FRDChime, { | freq=88, imod=1, amp=0.5, dur=0.5, pan=0, out=0 |
+		SynthDef(\FRDChime, { | freq=88, imod=0.2, amp=0.5, dur=0.5, pan=0, out=0 |
 			var sig, signal, aenv, fmod;
 			var freqs = [1400, 2300, 5267, 8543, 9832, 15222, 16387];
 			var amps = [1, 0.8, 0.6, 0.4, 0.3, 0.4, 0.5];
 			aenv = EnvGen.ar(Env.perc(0.001, dur - 0.001), levelScale: amp * 24, doneAction: 2);
-			fmod = SinOsc.ar(freq, freq, freq * imod) * aenv;
-			sig = LFTri.ar(freq);
+			fmod = SinOsc.ar(freq * [0.998, 1.003] * 1.5, freq * 0.45, freq * 0.55 * imod) * aenv;
+			sig = SinOsc.ar(freq + fmod).sum / 2;
 			sig = (sig * 0.01) + BBandPass.ar(sig, freqs, 0.1, amps).sum * 6 / amps.sum;
 
 			sig = MoogFF.ar(sig / 2, 12000);
+			sig = LPF.ar(sig, 200);
 			sig = sig * aenv;
 			sig = Pan2.ar(sig, pan);
 			Out.ar(out, sig);

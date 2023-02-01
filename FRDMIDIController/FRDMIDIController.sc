@@ -23,7 +23,7 @@ FRDMIDIController {
 			"MIDI Controller set: Arturia MiniLab mkII".postln;
 			params.put("CC Numbers", Dictionary.new
 				.put("Knob 1", 112)
-				.put("Knob 1 button", 113)
+				.put("Knob 1 button", 124)
 				.put("Knob 2", 74)
 				.put("Knob 3", 71)
 				.put("Knob 4", 76)
@@ -32,7 +32,7 @@ FRDMIDIController {
 				.put("Knob 7", 73)
 				.put("Knob 8", 75)
 				.put("Knob 9", 114)
-				.put("Knob 9 button", 115)
+				.put("Knob 9 button", 125)
 				.put("Knob 10", 18)
 				.put("Knob 11", 19)
 				.put("Knob 12", 16)
