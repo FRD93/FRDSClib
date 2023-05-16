@@ -150,7 +150,7 @@ FRDContinuousBufferGranulator {
 		SynthDef(\GrainBufMonoAR, { | buf, delay, pos, dur, atk, rate, amp, pan, out |
 			var snd, env;
 			EnvGen.ar(Env.new([0, 0], [dur + delay]), doneAction: 2);
-			snd = PlayBuf.ar(1, buf, rate, 1, pos);
+			snd = PlayBuf.ar(1, buf, -1 * rate, 1, pos);
 			snd = PitchShift.ar(snd, 0.01, rate, 0, 0);
 			env = EnvGen.ar(Env.new([0, 1, 0], [dur * atk, dur * (1.0 - atk)], [-2, 2]), levelScale: amp, doneAction: 0);
 			Out.ar(out, Pan2.ar(DelayL.ar(snd * env, 1, delay), pan));

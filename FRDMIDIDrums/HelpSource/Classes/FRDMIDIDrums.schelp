@@ -1,0 +1,148 @@
+TITLE:: FRDMIDIDrums
+summary:: Class for connecting various MIDI controllers
+categories:: FRD-PlugIns
+
+
+DESCRIPTION::
+Class for connecting various MIDI controllers
+
+				* * NoteOn Mapping * *
+				34 -> Snare Side
+				35 -> Kick Double
+		V		36 -> Kick Center
+				37 -> Snare Sidestick
+		V		38 -> Snare Center
+				39 -> Snare Rimclick
+				40 -> Snare Rimshot
+				41 -> Floor Tom 2 Center
+				42 -> Hi-Hat Tip Closed
+				43 -> Floor Tom 1 Center
+				44 -> Hi-Hat Pedal
+		V		45 -> Clap
+				46 -> Hi-Hat Tip CC Control
+				47 -> Rack Tom 2 Center
+				48 -> Rack Tom 1 Center
+				49 -> Splash Choke
+				50 -> Splash Edge
+				51 -> Ride Bow Tip
+				52 -> Ride Bow Shank
+				53 -> Ride Bell
+				54 -> Crash Left Choke
+				55 -> Crash Left Edge
+				56 -> Crash Right Choke
+				57 -> Crash Right Edge
+				58 -> Ride Choke
+				59 -> Ride Edge
+				60 -> Hi-Hat Shank Closed
+				61 -> Hi-Hat Shank Closed Tight
+				62 -> Hi-Hat Shank Looser
+				63 -> Hi-Hat Shank Open 1
+				64 -> Hi-Hat Shank Open 2
+				65 -> Hi-Hat Shank Open 3
+				66 -> Hi-Hat Tip Closed Tight
+		V		67 -> Hi-Hat Closed 1 Pan Left
+		V		68 -> Hi-Hat Closed 2 Pan Right
+		V		69 -> Hi-Hat Closed 3 Pan Center
+				70 -> Hi-Hat Tip Open 2
+				71 -> Hi-Hat Tip Open 3
+				72 -> Hi-Hat Pedal
+				73 -> Hi-Hat Footsplash
+
+CLASSMETHODS::
+
+
+METHOD:: new
+Create a new FRDMIDIController instance.
+ARGUMENT:: device
+MIDI device name to connect
+
+
+
+INSTANCEMETHODS::
+
+
+METHOD:: addFuncToCC
+Add a function to a control change
+ARGUMENT:: cc
+Control change name
+ARGUMENT:: func
+Function to be executed. Must have one argument, which is the value of the control change.
+
+
+METHOD:: removeFuncToCC
+Remove a previously added function (or synth's cc map) to a control change.
+ARGUMENT:: cc
+Control change name
+
+
+METHOD:: addSynthToNotes
+Map a Synth to the keyboard of the controller. The synth definition MUST implement three arguments: \midi_note for the MIDI note, \velocity for the MIDI velocity and \gate for the ADSR envelope's gate.
+ARGUMENT:: synth_name
+Synth Definition's name
+ARGUMENT:: synth_default_args
+Additional default values of the other parameters of the synth definition.
+
+
+METHOD:: mapCCToSynthArg
+Map a control change to an argument of the synth mapped to the notes.
+ARGUMENT:: cc
+Control change name
+ARGUMENT:: param
+Argument name
+ARGUMENT:: map_func
+Mapping function to be executed. Must have one argument, which is the value of the control change, and must return the mapped value.
+
+
+
+METHOD:: postCCNumbers
+Post all the control change name: index pairs implemented for the selected controller.
+
+
+METHOD:: params
+Get the params dictionary containing all the information of the controller.
+
+METHOD:: postCC
+Create a MIDIFunc that posts the control changes.
+
+
+EXAMPLES::
+
+
+code::
+
+// Init MIDI
+MIDIClient.init;
+MIDIIn.connectAll;
+
+// Connect a MIDI controller
+m = FRDMIDIController.new("Arturia MiniLab mkII");
+// Post the implemented control changes
+m.postCCNumbers;
+// Add a function to a control change
+m.addFuncToCC("Knob 2", { | val | val.postln; });
+// Create a simple test synth
+(
+SynthDef(\test, { | midi_note, velocity, imod=1, gate=1 |
+	var freq, env, mod, signal;
+	freq = midi_note.midicps;
+	env = EnvGen.ar(Env.adsr, gate, velocity / 127, doneAction: 2);
+	mod = SinOsc.ar(freq, 0, freq * imod);
+	signal = SinOsc.ar(freq + mod, 0, env);
+	Out.ar([0, 1], signal);
+}).add;
+)
+// Map the synth to the keyboard
+m.addSynthToNotes(synth_name: \test, synth_default_args: [\imod, 1]);
+// Map a control change to an argument of the synth
+m.mapCCToSynthArg("Knob 8", \imod, { | val | val / 10 });
+::
+
+
+
+
+
+
+
+
+
+
