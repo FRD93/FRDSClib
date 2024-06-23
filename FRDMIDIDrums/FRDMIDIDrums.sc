@@ -1,18 +1,24 @@
 FRDMIDIDrums {
-	var source, channel, outCh, noteOn, noteOff, cc_f;
+	var source, channel, outCh, noteOn, noteOff, cc_f, has_tom;
 
-	var kick_note=29, kick_timbre=110;
+	var kick_note=29, kick_timbre=30, tom1_loss=31, tom2_loss=32;
 	var snare_note=49, snare_timbre=110, snare_dur=15;
+	var tom1_synth, tom1_exc_chan=90, tom1_exc2_chan=91, tom2_synth, tom2_exc_chan=92, tom2_exc2_chan=93;
 
-
-	*new { | midisource=0, midichan=0, out=0  |
-		^super.new.init(midisource, midichan, out)
+	*new { | midisource=0, midichan=0, enable_tom=true, out=0  |
+		^super.new.init(midisource, midichan, enable_tom, out)
 	}
 
-	init { | midisource=0, midichan=0, out=0 |
+	init { | midisource=0, midichan=0, enable_tom=true, out=0 |
 		source = midisource;
 		channel = midichan;
+		has_tom = enable_tom;
 		outCh= out;
+
+		if(has_tom, {
+			tom1_synth = Synth(\Tom, [\tension, 0.012, \loss, 0.9993, \amp, 0.2, \in, tom1_exc_chan, \ext_trig, tom1_exc2_chan, \pan, -0.3, \out, outCh]);
+			tom2_synth = Synth(\Tom, [\tension, 0.015, \loss, 0.9994, \amp, 0.2, \in, tom2_exc_chan, \ext_trig, tom2_exc2_chan, \pan, 0.3, \out, outCh]);
+		});
 
 		noteOn = { | src, chan, num, vel |
 			//("src:" + src + "chan:" + chan + "num:" + num + "vel:" + vel).postln;
@@ -33,8 +39,8 @@ FRDMIDIDrums {
 				44 -> Hi-Hat Pedal
 		V		45 -> Clap
 				46 -> Hi-Hat Tip CC Control
-				47 -> Rack Tom 2 Center
-				48 -> Rack Tom 1 Center
+		V		47 -> Rack Tom 2 Center
+		V		48 -> Rack Tom 1 Center
 				49 -> Splash Choke
 				50 -> Splash Edge
 				51 -> Ride Bow Tip
@@ -66,6 +72,10 @@ FRDMIDIDrums {
 				if(num == 36, {Synth(\Kick, [\midiInit, kick_timbre, \midiEnd, kick_note, \amp, vel / 127, \outBus, outCh])});
 				if(num == 38, {Synth(\Snare, [\midiInit, snare_timbre, \midiEnd, snare_note, \amp, vel / 127, \dur, snare_dur / 127, \outBus, outCh])});
 				if(num == 45, {Synth(\Clap, [\shift, 1, \body, 1, \amp, vel / 127, \outBus, outCh])});
+				if(has_tom, {
+					if(num == 47, {Synth.before(tom1_synth, \TomExcitation, [\out, tom1_exc_chan, \amp, vel / 127, \outBus, outCh]); Synth.before(tom1_synth, \TomTrigger, [\out, tom1_exc2_chan]); });
+					if(num == 48, {Synth.before(tom2_synth, \TomExcitation, [\out, tom2_exc_chan, \amp, vel / 127, \outBus, outCh]); Synth.before(tom2_synth, \TomTrigger, [\out, tom2_exc2_chan]);});
+				});
 				if(num == 67, {Synth(\Hat, [\hpf, 1000, \shift, 1, \amp, vel / 127, \pan, -0.63, \outBus, outCh])});
 				if(num == 68, {Synth(\Hat, [\hpf, 900, \shift, 0.75, \amp, vel / 127, \pan, 0.63, \outBus, outCh])});
 				if(num == 69, {Synth(\Hat, [\hpf, 1100, \shift, 1.25, \amp, vel / 127, \pan, 0, \outBus, outCh])});
@@ -84,9 +94,14 @@ FRDMIDIDrums {
 				* * CC Mapping * *
 				29 -> Kick Note
 				30 -> Kick Timbre
+				31 -> Tom 1 Loss
+				32 -> Tom 2 Loss
+
 				*/
 				if(num == 29, {kick_note = val});
 				if(num == 30, {kick_timbre = val});
+				if(num == 31, {tom1_loss = 0.999 + ((val / 127) * 0.0009); tom1_synth.set(\loss, tom1_loss);});
+				if(num == 32, {tom2_loss = 0.999 + ((val / 127) * 0.0009); tom2_synth.set(\loss, tom2_loss);});
 
 			});
 		};
@@ -206,18 +221,33 @@ FRDMIDIDrums {
 			Out.ar(outBus, Pan2.ar(out, pan));
 		}).writeDefFile.add;
 
-		SynthDef(\Tom_01, { | freq=160, lpf=15000, amp=0.5, atk=0.01, timbre=1, pan=0, out=0 |
-	var osc, env;
-	var partials = [1, 1.58, 2.14, 2.30, 2.65, 2.92, 3.16, 3.50, 3.60, 3.65, 4.06, 4.15];
-	var decays = [0.1, 0.5, 0.7, 0.07, 1, 0.37, 0.85, 0.2, 0.1, 0.76, 0.08, 0.05];
+		SynthDef(\TomExcitation, { | amp=0.5, dur=0.1, out=20 |
+			var excitation = EnvGen.kr(Env.perc(0.00, 1), Impulse.kr(0), timeScale: 0.1, doneAction: 0 ) * (PinkNoise.ar(0.4));
+			var ex2env = EnvGen.ar(Env.perc(0.001, 1, curve: -8), Impulse.kr(0), timeScale: 0.1, doneAction: 0 );
+			excitation =  excitation + SinOsc.ar(40 + SinOsc.ar(40, 0, 40 * ex2env * 100), 1.5pi, ex2env * 0.25);
+			DetectSilence.ar(excitation, doneAction: 2);
+			Out.ar(out, excitation * amp);
+		}).writeDefFile.add;
 
-	partials = [freq] ++ partials[1..] * timbre * freq;
-	env = EnvGen.ar(Env.perc(atk, 0.5));
+		SynthDef(\TomTrigger, { | out=20 |
+			Out.ar(out, Impulse.ar(0));
+		}).writeDefFile.add;
 
-	osc = Ringz.ar(Impulse.ar(0), partials, decays, partials.size.reciprocal).sum;
+		SynthDef(\Tom, { | amp=0.5, atk=0.01, tension=0.02, loss=0.9999, pan=0, in=20, ext_trig=21, out=0 |
+			var excitation = In.ar(in, 1);
+			var sig = MembraneCircle.ar(excitation, tension, loss) * amp;
 
-	osc = osc * env;
-	Out.ar(out, Pan2.ar(osc, pan));
-}).writeDefFile.add;
+			sig = CompanderD.ar(sig, thresh: 0.25, slopeBelow: 1, slopeAbove: 0.01, clampTime: 0.025, relaxTime: 0.0001) * 3;
+			sig = sig + HPF.ar(sig, 3000);
+			sig = sig + HPF.ar(sig, 4000);
+			sig = sig + HPF.ar(sig, 5000);
+			sig = sig.tanh;
+			sig = Pan2.ar(sig, pan);
+			sig = GVerb.ar(sig, roomsize: 10, revtime: 0.5, damping: 0, inputbw: 0);
+
+			//sig = sig + BBandPass.ar(sig, 4000);
+			//DetectSilence.ar(sig, doneAction: 2);
+			Out.ar(out, sig);
+		}).writeDefFile.add;
 	}
 }

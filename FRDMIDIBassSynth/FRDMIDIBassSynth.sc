@@ -14,14 +14,14 @@ FRDMIDIBassSynth {
 		imod_cc_val = imod_cc;
 		atk_val = 0.05;
 		lpf_val = 2000;
-		imod_val = 10;
+		imod_val = 0;
 		notes = Array.newClear(128);
 
 		noteOn = { | src, chan, num, vel |
 
 			if((src == MIDIClient.sources[source].uid) && (chan == channel), {
 				("src:" + src + "chan:" + chan + "num:" + num + "vel:" + vel).postln;
-				notes[num] = Synth(\Bass_02, [\freq, num.midicps, \amp, vel / 127.0, \atk, atk_val, \lpf, lpf_val, \out, outCh]);
+				notes[num] = Synth(\Bass_02, [\freq, num.midicps, \amp, vel / 127.0, \atk, atk_val, \lpf, lpf_val, \imod, imod_val, \out, outCh]);
 			});
 		};
 
@@ -49,7 +49,7 @@ FRDMIDIBassSynth {
 				});
 				// imod
 				if(imod_cc_val == num, {
-					imod_val = (val * 99 / 127) + 1;
+					imod_val = (val * 99 / 127) + 0;
 					notes.do({ | synth | synth.set(\imod, imod_val) });
 				});
 			});
@@ -74,6 +74,7 @@ FRDMIDIBassSynth {
 		SynthDef(\Bass_02, { | freq=60, lpf=15000, amp=0.5, atk=0.01, imod=10, gate=1, pan=0, out=0 |
 			var osc, env, fenv, mod;
 			fenv = EnvGen.ar(Env.new([100, 0], [atk * 0.01], 2));
+
 			mod = SinOsc.ar(freq, 0, fenv * freq);
 			env = EnvGen.ar(Env.perc(atk, 0.5));
 			env = env * EnvGen.ar(Env.adsr(atk, 0.1, 0.9, 0.01, 1), gate, AmpCompA.ir(freq), doneAction: 2);

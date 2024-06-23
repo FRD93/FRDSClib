@@ -1,0 +1,107 @@
+TITLE:: FRDMIDIController
+summary:: Class for connecting various MIDI controllers
+categories:: FRD-PlugIns
+
+
+DESCRIPTION::
+Class for connecting various MIDI controllers
+
+
+CLASSMETHODS::
+
+
+METHOD:: new
+Create a new FRDMIDIController instance.
+ARGUMENT:: device
+MIDI device name to connect
+
+
+
+INSTANCEMETHODS::
+
+
+METHOD:: addFuncToCC
+Add a function to a control change
+ARGUMENT:: cc
+Control change name
+ARGUMENT:: func
+Function to be executed. Must have one argument, which is the value of the control change.
+
+
+METHOD:: removeFuncToCC
+Remove a previously added function (or synth's cc map) to a control change.
+ARGUMENT:: cc
+Control change name
+
+
+METHOD:: addSynthToNotes
+Map a Synth to the keyboard of the controller. The synth definition MUST implement three arguments: \midi_note for the MIDI note, \velocity for the MIDI velocity and \gate for the ADSR envelope's gate.
+ARGUMENT:: synth_name
+Synth Definition's name
+ARGUMENT:: synth_default_args
+Additional default values of the other parameters of the synth definition.
+
+
+METHOD:: mapCCToSynthArg
+Map a control change to an argument of the synth mapped to the notes.
+ARGUMENT:: cc
+Control change name
+ARGUMENT:: param
+Argument name
+ARGUMENT:: map_func
+Mapping function to be executed. Must have one argument, which is the value of the control change, and must return the mapped value.
+
+
+
+METHOD:: postCCNumbers
+Post all the control change name: index pairs implemented for the selected controller.
+
+
+METHOD:: params
+Get the params dictionary containing all the information of the controller.
+
+METHOD:: postCC
+Create a MIDIFunc that posts the control changes.
+
+
+EXAMPLES::
+
+
+code::
+
+// Init MIDI
+MIDIClient.init;
+MIDIIn.connectAll;
+
+// Connect a MIDI controller
+m = FRDMIDIController.new("Arturia MiniLab mkII");
+// Post the implemented control changes
+m.postCCNumbers;
+// Add a function to a control change
+m.addFuncToCC("Knob 2", { | val | val.postln; });
+// Create a simple test synth
+(
+SynthDef(\test, { | midi_note, velocity, imod=1, gate=1 |
+	var freq, env, mod, signal;
+	freq = midi_note.midicps;
+	env = EnvGen.ar(Env.adsr, gate, velocity / 127, doneAction: 2);
+	mod = SinOsc.ar(freq, 0, freq * imod);
+	signal = SinOsc.ar(freq + mod, 0, env);
+	Out.ar([0, 1], signal);
+}).add;
+)
+// Map the synth to the keyboard
+m.addSynthToNotes(synth_name: \test, synth_default_args: [\imod, 1]);
+// Map a control change to an argument of the synth
+m.mapCCToSynthArg("Knob 8", \imod, { | val | val / 10 });
+::
+
+
+
+
+
+
+
+
+
+
