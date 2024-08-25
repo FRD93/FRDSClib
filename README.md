@@ -27,14 +27,6 @@ FRDRingModulatorPlugIn().writeSynthDef();
 FRDSampler("").writeSynthDef();
 FRDSpatPlugIn().writeDefFile();
 FRDThunders().writeSynthDef();
-
-["backend/", "audio_widgets/"].do({ | subpath |
-	PathName(path ++ subpath).filesDo({ | file |
-		file = file.asAbsolutePath;
-		f = File(file, "r");
-		f = f.readAllString.interpret;
-	});
-});
 0.exit();
 )
 ```
