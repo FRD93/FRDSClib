@@ -20,7 +20,7 @@ FRDLiveInputPlugIn().writeSynthDef();
 FRDLooperPlugIn().writeSynthDef();
 FRDMIDIBassSynth().writeSynthDef();
 FRDMIDIDrums().writeSynthDef();
-FRDMIDISampler().writeSynthDef();
+// FRDMIDISampler().writeSynthDef();
 FRDMono2StereoPlugIn().writeSynthDef();
 FRDPitchTrackRingModulatorPlugIn().writeSynthDef();
 FRDRingModulatorPlugIn().writeSynthDef();
