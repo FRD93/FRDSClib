@@ -49,7 +49,7 @@ FRDConvolutionPlugIn {
 				input = CompanderD.ar( input, 0.6, 1, 0.1 );
 				input = Limiter.ar(input);
 				Out.ar( outCh, (in_snd * inGain.dbamp) + (input * outGain.dbamp) );
-			}).add;
+			}).writeDefFile.add;
 			0.1.wait;
 			conv = Synth(\FRDConvolution, [ \inCh, inCh_r, \outCh, outCh_r, \inGain, inGain_r, \outGain, outGain_r ], actionNode_r, addAction_r);
 		}.play( AppClock );
