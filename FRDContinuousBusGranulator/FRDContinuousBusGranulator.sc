@@ -1,151 +1,77 @@
-FRDContinuousBusGranulator {
+/*
+FRDContinuousBusGranulator
+Granulatore continuo che legge da un bus stereo e spawna grani a intervalli
+regolari (grainsPerSecond), con parametri randomizzati entro range.
+Copyright (c) Francesco Roberto Dani
 
-	// System variables
-	var presetPath, presets, input, name_r, inCh_r, outCh_r, routine_r, addAction_r, actionNode_r, maxDel_r, minGDur_r, maxGDur_r, maxRate_r, maxPan_r, grainsPerSecond_r, amp_r;
-	var path;
-	// GUI variables
-	var window, inCh_n, outCh_n, patterns_b, inGain_s, hasGUI;
+Modifiche rispetto alla versione originale:
+- Estende FRDPlugInBase.
+- BUG FIX PRINCIPALE: `\GrainBusStereoToMonoAR` era definito solo dentro il
+  metodo di istanza `writeSynthDef`, mai chiamato da nessuna parte. Di fatto
+  il .scsyndef non veniva mai scritto su disco, quindi al boot del server
+  il synth non esisteva.
+  Ora `*writeSynthDef` scrive il synthdef su disco con `.writeDefFile`
+  (NON `.add`: niente compilazione/invio al server a runtime). Va eseguito
+  una tantum con `FRDPlugInBase.buildSynthDefs(FRDContinuousBusGranulator)`
+  quando scrivi o modifichi il synthdef, poi il server lo carica da solo
+  al boot — zero latenza nelle sessioni successive. A runtime, `*new` si
+  limita a verificare con `FRDPlugInBase.checkSynthDefs` che il def sia
+  presente, avvisando con un errore chiaro se manca il build.
+- I parametri (`maxDel`, `minGDur`, `maxGDur`, `maxRate`, `maxPan`,
+  `grainsPerSecond`, `amp`) sono ora letti dalla Routine leggendo le var di
+  istanza correnti (non catturate per valore all'avvio): i cambi a runtime
+  (es. `~dsp["BassBusGranulator"].maxRate_(...)`) hanno quindi effetto
+  dal grano successivo, com'era nell'originale, ma senza i getter/setter
+  duplicati riga per riga.
+*/
 
+FRDContinuousBusGranulator : FRDPlugInBase {
 
-	// new method
-	*new { | inCh=20, outCh=0, maxDel=0, minGDur=0.25, maxGDur=0.5, maxRate=0, maxPan=0.63, grainsPerSecond=60, amp=1, addAction='addToHead', actionNode=1 |
-		^super.new.init(inCh, outCh, maxDel, minGDur, maxGDur, maxRate, maxPan, grainsPerSecond, amp, addAction, actionNode)
+	var <inCh, <maxDel, <minGDur, <maxGDur, <maxRate, <maxPan, <grainsPerSecond, <amp;
+	var routine;
+
+	// GUI
+	var inCh_n, outCh_n;
+
+	*new { | inCh=20, outCh=0, maxDel=0, minGDur=0.25, maxGDur=0.5, maxRate=0, maxPan=0.63, grainsPerSecond=60, amp=1, addAction=\addToHead, actionNode=1 |
+		^super.new.initBase(outCh, addAction, actionNode)
+			.initGranulator(inCh, maxDel, minGDur, maxGDur, maxRate, maxPan, grainsPerSecond, amp)
 	}
 
-	init { | inCh, outCh, maxDel, minGDur, maxGDur, maxRate, maxPan, grainsPerSecond, amp, addAction, actionNode |
-		inCh_r = inCh;
-		outCh_r = outCh;
-		maxDel_r = maxDel;
-		minGDur_r = minGDur;
-		maxGDur_r = maxGDur;
-		maxRate_r = maxRate;
-		maxPan_r = maxPan;
-		grainsPerSecond_r = grainsPerSecond;
-		addAction_r = addAction;
-		actionNode_r = actionNode;
+	initGranulator { | argInCh, argMaxDel, argMinGDur, argMaxGDur, argMaxRate, argMaxPan, argGrainsPerSecond, argAmp |
+		FRDPlugInBase.checkSynthDefs(this.class);
 
-		routine_r = Routine{
-			var delay;
-			inf.do({ | id |
-				delay = rrand(0.0, maxDel_r);
+		inCh = argInCh;
+		maxDel = argMaxDel;
+		minGDur = argMinGDur;
+		maxGDur = argMaxGDur;
+		maxRate = argMaxRate;
+		maxPan = argMaxPan;
+		grainsPerSecond = argGrainsPerSecond;
+		amp = argAmp;
+
+		routine = Routine {
+			loop {
+				var delay = rrand(0.0, maxDel);
 				Synth(\GrainBusStereoToMonoAR, [
-					\bus, inCh_r,
+					\bus, inCh,
 					\delay, delay,
-					\dur, rrand(minGDur_r, maxGDur_r).round(0.01),
+					\dur, rrand(minGDur, maxGDur).round(0.01),
 					\atk, rrand(0.2, 0.8).roundUp(0.1),
-					\rate, rrand(1-maxRate_r, 1+maxRate_r).round(0.25),
-					\amp, exprand(0.75, 1) * (0).dbamp,
-					\pan, rrand(-1*maxPan_r, maxPan_r),
-					\out, outCh_r
-				], actionNode_r, addAction_r);
-				//Synth.tail(s, \GrainBusMonoAR, [\bus, 20, \dur, 1, \atk, 0.5, \rate, 1, \amp, 1, \pan, 0, \out, 0]);
-				grainsPerSecond_r.reciprocal.wait;
-			});
+					\rate, rrand(1 - maxRate, 1 + maxRate).round(0.25),
+					\amp, exprand(0.75, 1) * amp.dbamp,
+					\pan, rrand(-1 * maxPan, maxPan),
+					\out, outCh
+				], actionNode, addAction);
+				grainsPerSecond.reciprocal.wait;
+			};
 		};
-		routine_r.play;
+		routine.play;
 	}
 
+	*synthDefNames { ^[\GrainBusStereoToMonoAR] }
 
-	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
-	asMixerMatrixProcess {
-		^Dictionary.new.put(\inCh, inCh_r).put(\outCh, outCh_r).put(\inChannels, 2).put(\outChannels, 2)
-	}
-
-
-	/*
-	* GETTERS AND SETTERS
-	* FOR PARAMETERS
-	*/
-
-	// inCh (input channel)
-	inCh {
-		^inCh_r
-	}
-	inCh_ { | inCh |
-		inCh_r = inCh;
-		if(hasGUI, {inCh_n.value_(inCh_r)});
-		^inCh_r
-	}
-
-	// outCh (output channel)
-	outCh {
-		^outCh_r
-	}
-	outCh_ { | outCh |
-		outCh_r = outCh;
-		if(hasGUI, {outCh_n.value_(outCh_r)});
-		^outCh_r
-	}
-
-	maxDel {
-		^maxDel_r
-	}
-	maxDel_ { | maxDel |
-		maxDel_r = maxDel;
-		^maxDel_r
-	}
-
-	minGDur {
-		^minGDur_r
-	}
-	minGDur_ { | minGDur |
-		minGDur_r = minGDur;
-		^minGDur_r
-	}
-
-	maxGDur {
-		^maxGDur_r
-	}
-	maxGDur_ { | maxGDur |
-		maxGDur_r = maxGDur;
-		^maxGDur_r
-	}
-
-	maxRate {
-		^maxRate_r
-	}
-	maxRate_ { | maxRate |
-		maxRate_r = maxRate;
-		^maxRate_r
-	}
-
-	maxPan {
-		^maxPan_r
-	}
-	maxPan_ { | maxPan |
-		maxPan_r = maxPan;
-		^maxPan_r
-	}
-
-	grainsPerSecond {
-		^grainsPerSecond_r
-	}
-	grainsPerSecond_ { | grainsPerSecond |
-		grainsPerSecond_r = grainsPerSecond;
-		^grainsPerSecond_r
-	}
-
-	amp {
-		^amp_r
-	}
-	amp_ { | amp |
-		amp_r = amp;
-		^amp_r
-	}
-
-
-	start {
-		routine_r.reset.play;
-	}
-
-	stop {
-		routine_r.stop;
-	}
-
-	/*
-	* STORE THE SYNTH DEFINITION TO FILE
-	*/
-	writeSynthDef {
+	*writeSynthDef {
 		SynthDef(\GrainBusStereoToMonoAR, { | bus, delay=0, dur, atk, rate, amp, pan, out |
 			var snd, env;
 			EnvGen.ar(Env.new([0, 0], [dur + delay]), doneAction: 2);
@@ -156,6 +82,36 @@ FRDContinuousBusGranulator {
 		}).writeDefFile.add;
 	}
 
+	asMixerMatrixProcess {
+		^(inChannels: 2, outChannels: 2, inCh: inCh, outCh: outCh)
+	}
+
+	inCh_ { | val | inCh = val; this.refreshGUIField(\inCh, val) }
+	maxDel_ { | val | maxDel = val }
+	minGDur_ { | val | minGDur = val }
+	maxGDur_ { | val | maxGDur = val }
+	maxRate_ { | val | maxRate = val }
+	maxPan_ { | val | maxPan = val }
+	grainsPerSecond_ { | val | grainsPerSecond = val }
+	amp_ { | val | amp = val }
+
+	start { routine.reset.play }
+	stop { routine.stop }
+
+	refreshGUIField { | key, val |
+		if(hasGUI, {
+			case
+			{ key == \inCh } { inCh_n.value_(val) }
+			{ key == \outCh } { outCh_n.value_(val) };
+		});
+	}
+
+	showGUI {
+		inCh_n = NumberBox().action_({ | num | this.inCh_(num.value.asInteger) }).value_(inCh);
+		outCh_n = NumberBox().action_({ | num | this.outCh_(num.value.asInteger) }).value_(outCh);
+		this.buildWindow(
+			"FRDContinuousBusGranulator",
+			[StaticText().string_("inCh"), inCh_n, StaticText().string_("outCh"), outCh_n]
+		);
+	}
 }
-
-

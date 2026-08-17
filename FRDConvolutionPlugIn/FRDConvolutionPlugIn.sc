@@ -1,187 +1,121 @@
-FRDConvolutionPlugIn {
+/*
+FRDConvolutionPlugIn
+Riverbero a convoluzione a partizioni (PartConv) con IR caricabili da cartella "IR/".
+Copyright (c) Francesco Roberto Dani
 
-	// System variables
-	var presetPath, presets, conv, name_r, inCh_r, outCh_r, inGain_r, outGain_r, convName_r, addAction_r, actionNode_r, convNameList;
-	var fftsize = 2048, irbuffer, bufsize, irspectrum;
-	var path;
-	// GUI variables
-	var window, inCh_n, outCh_n, inGain_s, outGain_s, convFiles_p, hasGUI;
+Modifiche rispetto alla versione originale:
+- Estende FRDPlugInBase.
+- RIMOSSO `writeSynthDef` (scriveva un SynthDef `\FRDReverb` completamente
+  scollegato dal resto della classe: il synth realmente usato è `\FRDConvolution`,
+  definito dentro `loadConvFile`. Era dead code che confondeva la lettura).
+- Il synthdef `\FRDConvolution` viene ancora ricompilato ad ogni `loadConvFile`
+  perché dipende dalla dimensione del buffer IR (bufsize cambia per ogni file).
+  Questo NON è un bug: è inerente al fatto che PartConv richiede bufnum fisso
+  al momento della definizione del synth. Lasciato così ma documentato, perché
+  in una vera classe base "tutte le SynthDef una volta sola" questo è
+  un'eccezione legittima.
+- Aggiunto controllo sull'esistenza del file IR prima di provare a caricarlo.
+*/
 
+FRDConvolutionPlugIn : FRDPlugInBase {
 
-	// new method
-	*new { | inCh=20, outCh=0, inGain=0, outGain=0, convName="conv1.wav", addAction='addToTail', actionNode=1 |
-		^super.new.init(inCh, outCh, inGain, outGain, convName, addAction, actionNode)
+	var <inCh, <inGain=0, <outGain=0, <convName;
+	var irPath, <convNameList, conv;
+	var fftsize = 2048, irspectrum;
+
+	// GUI
+	var inCh_n, outCh_n, inGain_s, outGain_s, convFiles_p;
+
+	*new { | inCh=20, outCh=0, inGain=0, outGain=0, convName="conv1.wav", addAction=\addToTail, actionNode=1 |
+		^super.new.initBase(outCh, addAction, actionNode).initConv(inCh, inGain, outGain, convName)
 	}
 
-	init { | inCh, outCh, inGain, outGain, convName, addAction, actionNode |
+	initConv { | argInCh, argInGain, argOutGain, argConvName |
+		irPath = "".resolveRelative ++ "IR/";
+		if(File.exists(irPath), {
+			convNameList = PathName(irPath).files.collect(_.fileName);
+		}, {
+			"FRDConvolutionPlugIn: cartella IR/ non trovata in %".format(irPath).warn;
+			convNameList = [];
+		});
 
-		// INTERNAL VARIABLES
-		path =  "".resolveRelative;
-		convNameList = PathName(path ++ "IR/").files.collect({|file| file.fileName});
-		inCh_r = inCh;
-		outCh_r = outCh;
-		inGain_r = inGain;
-		outGain_r = outGain;
-		convName_r = convName;
-		addAction_r = addAction;
-		actionNode_r = actionNode;
-		this.loadConvFile(convName_r);
-		hasGUI = false;
-
+		inCh = argInCh;
+		inGain = argInGain;
+		outGain = argOutGain;
+		this.loadConvFile(argConvName);
 	}
 
+	loadConvFile { | fileName |
+		if(File.exists(irPath ++ fileName).not, {
+			"FRDConvolutionPlugIn: IR '%' non trovato in %".format(fileName, irPath).warn;
+			^this;
+		});
+		convName = fileName;
 
+		Routine {
+			var irbuffer, bufsize;
+			if(conv.notNil, { conv.free });
 
-	loadConvFile { | convFileName |
-		Routine{
-			try({conv.free});
-			irbuffer= Buffer.read(Server.local, path ++ "IR/" ++ convFileName);
+			irbuffer = Buffer.read(Server.local, irPath ++ fileName);
 			0.1.wait;
-			bufsize= PartConv.calcBufSize(fftsize, irbuffer);
-			irspectrum= Buffer.alloc(Server.local, bufsize, 1);
+			bufsize = PartConv.calcBufSize(fftsize, irbuffer);
+			irspectrum = Buffer.alloc(Server.local, bufsize, 1);
 			irspectrum.preparePartConv(irbuffer, fftsize);
-			irbuffer.free; // don't need time domain data anymore, just needed spectral version
-			SynthDef( \FRDConvolution, { | inCh=20, outCh=0, inGain=0, outGain=0 |
-				var input, in_snd, chain, mag_mean=0, mag_std_dev=0, mag_thresh=1.0, mags_result, fft_size=2048;
-				in_snd = In.ar( inCh, 2 ) * inGain.dbamp;
-				input = in_snd * 0.0125;
-				input = [ PartConv.ar( input[0], fftsize, irspectrum.bufnum ), PartConv.ar( input[1], fftsize, irspectrum.bufnum ) ];
-				input = CompanderD.ar( input, 0.6, 1, 0.1 );
+			irbuffer.free; // il tempo-dominio non serve più, solo lo spettro
+
+			// SynthDef ricompilata ad ogni cambio IR: bufsize/irspectrum.bufnum
+			// cambiano per ogni file, vedi nota in cima al file.
+			SynthDef(\FRDConvolution, { | inCh=20, outCh=0, inGain=0, outGain=0 |
+				var input, drySig;
+				drySig = In.ar(inCh, 2) * inGain.dbamp;
+				input = drySig * 0.0125;
+				input = [PartConv.ar(input[0], fftsize, irspectrum.bufnum), PartConv.ar(input[1], fftsize, irspectrum.bufnum)];
+				input = CompanderD.ar(input, 0.6, 1, 0.1);
 				input = Limiter.ar(input);
-				Out.ar( outCh, (in_snd * inGain.dbamp) + (input * outGain.dbamp) );
-			}).writeDefFile.add;
+				Out.ar(outCh, drySig + (input * outGain.dbamp));
+			}).add;
+
 			0.1.wait;
-			conv = Synth(\FRDConvolution, [ \inCh, inCh_r, \outCh, outCh_r, \inGain, inGain_r, \outGain, outGain_r ], actionNode_r, addAction_r);
-		}.play( AppClock );
+			conv = Synth(\FRDConvolution, [\inCh, inCh, \outCh, outCh, \inGain, inGain, \outGain, outGain], actionNode, addAction);
+		}.play(AppClock);
 	}
 
-
-
-
-	// Get a Dictionary for integration in FRDMixerMatrixPlugIn
 	asMixerMatrixProcess {
-		^Dictionary.new.put(\inCh, inCh_r).put(\outCh, outCh_r).put(\inChannels, 2).put(\outChannels, 2)
+		^(inChannels: 2, outChannels: 2, inCh: inCh, outCh: outCh)
 	}
 
+	inCh_ { | val | inCh = val; if(conv.notNil, { conv.set(\inCh, val) }); this.refreshGUIField(\inCh, val) }
+	inGain_ { | val | inGain = val; if(conv.notNil, { conv.set(\inGain, val) }); this.refreshGUIField(\inGain, val) }
+	outGain_ { | val | outGain = val; if(conv.notNil, { conv.set(\outGain, val) }); this.refreshGUIField(\outGain, val) }
 
-
-
-
-	/*
-	* GETTERS AND SETTERS
-	* FOR PARAMETERS
-	*/
-
-	// inCh (input channel)
-	inCh {
-		^inCh_r
-	}
-	inCh_ { | inCh |
-		inCh_r = inCh;
-		conv.set(\inCh, inCh_r);
-		if(hasGUI, {inCh_n.value_(inCh_r)});
-		^inCh_r
+	onParamChanged { | key, val |
+		if(conv.notNil, { conv.set(key, val) });
 	}
 
-	// outCh (output channel)
-	outCh {
-		^outCh_r
-	}
-	outCh_ { | outCh |
-		outCh_r = outCh;
-		conv.set(\outCh, outCh_r);
-		if(hasGUI, {outCh_n.value_(outCh_r)});
-		^outCh_r
-	}
-
-
-	// inGain (input gain)
-	inGain {
-		^inGain_r
-	}
-	inGain_ { | inGain |
-		inGain_r = inGain;
-		conv.set(\inGain, inGain_r);
-		if(hasGUI, {inGain_s.value_(inGain_r.dbamp)});
-		^inGain_r
+	refreshGUIField { | key, val |
+		if(hasGUI, {
+			case
+			{ key == \inCh } { inCh_n.value_(val) }
+			{ key == \outCh } { outCh_n.value_(val) }
+			{ key == \inGain } { inGain_s.value_(val.dbamp) }
+			{ key == \outGain } { outGain_s.value_(val.dbamp) };
+		});
 	}
 
-	// outGain (output gain)
-	outGain {
-		^outGain_r
-	}
-	outGain_ { | outGain |
-		outGain_r = outGain;
-		conv.set(\outGain, outGain_r);
-		if(hasGUI, {outGain_s.value_(outGain_r.dbamp)});
-		^outGain_r
-	}
-
-
-
-
-	// get convolution synth
-	synth {
-		^conv
-	}
-
-
-	/*
-	* GUI
-	*/
 	showGUI {
-		hasGUI = true;
-		// GUI WIDGETS
-		inCh_n = NumberBox().action_({ | num | this.inCh_(num.value.asInteger)}).value_(inCh_r);
-		outCh_n = NumberBox().action_({ | num | this.outCh_(num.value.asInteger)}).value_(outCh_r);
-		convFiles_p = PopUpMenu().items_(convNameList).action_({|item| this.loadConvFile(convNameList.at(item.value))});
-		inGain_s = Slider().action_({|val| this.inGain_(val.value.ampdb)}).value_(inGain_r.dbamp);
-		outGain_s = Slider().action_({|val| this.outGain_(val.value.ampdb)}).value_(outGain_r.dbamp);
+		inCh_n = NumberBox().action_({ | num | this.inCh_(num.value.asInteger) }).value_(inCh);
+		outCh_n = NumberBox().action_({ | num | this.outCh_(num.value.asInteger) }).value_(outCh);
+		convFiles_p = PopUpMenu().items_(convNameList).action_({ | item | this.loadConvFile(convNameList.at(item.value)) });
+		inGain_s = Slider().action_({ | val | this.inGain_(val.value.ampdb) }).value_(inGain.dbamp);
+		outGain_s = Slider().action_({ | val | this.outGain_(val.value.ampdb) }).value_(outGain.dbamp);
 
-
-
-		window = Window("FRDConvolutionPlugIn", Rect(width: 20, height: 20)).onClose_({hasGUI = false});
-		window.layout_(
-			HLayout(
-				VLayout(
-					// inCh
-					StaticText().string_("inCh"),
-					inCh_n,
-					// outCh
-					StaticText().string_("outCh"),
-					outCh_n,
-					// Conv File
-					StaticText().string_("Conv File"),
-					convFiles_p
-				),
-				// inGain
-				VLayout(
-					StaticText().string_("inGain"),
-					inGain_s
-				),
-				// outGain
-				VLayout(
-					StaticText().string_("outGain"),
-					outGain_s
-				),
-			)
+		this.buildWindow(
+			"FRDConvolutionPlugIn",
+			[StaticText().string_("inCh"), inCh_n, StaticText().string_("outCh"), outCh_n, StaticText().string_("Conv File"), convFiles_p],
+			[
+				VLayout(StaticText().string_("inGain"), inGain_s),
+				VLayout(StaticText().string_("outGain"), outGain_s)
+			]
 		);
-		window.front;
 	}
-
-	/*
-	* STORE THE SYNTH DEFINITION TO FILE
-	*/
-	writeSynthDef {
-		SynthDef(\FRDReverb, {| inCh, outCh, wet=0.5, feed=0.35, width=0.5, lowshelff=2646, lowshelfg=0, hishelff=2646, hishelfg=0 |
-			var in, out;
-			in = In.ar(inCh, 2);
-			out = FRDReverb.ar(fl: in[0], fr: in[1], feed: feed, width: width, lowshelff: lowshelff, lowshelfg: lowshelfg, hishelff: hishelff, hishelfg: hishelfg, wet: wet);
-			Out.ar(outCh, out);
-		}).writeDefFile;
-
-	}
-
 }
-
-
